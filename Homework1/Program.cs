@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Microsoft.VisualBasic;
+using System;
+using System.Security.Cryptography.X509Certificates;
 
 namespace Homework1
 {
@@ -10,8 +12,15 @@ namespace Homework1
                 "\n/help - краткая справочная информация о том, как пользоваться программой" +
                 "\n/info - предоставляет информацию о версии программы и дате её создания" +
                 "\n/echo - после ввода имени данная команда становится доступной" +
-                "\n/exit - выйти из программы";
+                "\n/exit - выйти из программы" +
+                "\n/addtask - добавить новую задачу в список" +
+                "\n/showtasks - отобразить список всех добавленных задач" +
+                "\n/removetask - удалять задачи по номеру в списке\n";
         private static string info = "Версия 0.0.1\n27.08.2025";
+        public static List<string> doList = new List<string>();
+        public static string input;
+        public static string echo;
+        public static string separation = "---------------------------";
 
         static void Main(string[] args)
         {
@@ -20,7 +29,7 @@ namespace Homework1
             while (true)
             {
                 Console.Write("Введите команду: ");
-                string input = Console.ReadLine();
+                input = Console.ReadLine();
                 string echo = string.Empty;
                 if (input.Contains(" "))
                 {
@@ -36,28 +45,30 @@ namespace Homework1
                         StartMessage();
                         break;
                     case "/help":
-                        if (!string.IsNullOrEmpty(massege))
-                            Console.WriteLine($"Я с удовольствием напомню тебе, {massege}, что я могу сделать {iCanDo}");
-                        else Console.WriteLine($"Я с удовольствием напомню тебе, что я могу сделать {iCanDo}");
+                        HelpMessage();
                         break;
                     case "/info":
-                        if (!string.IsNullOrEmpty(massege))
-                            Console.WriteLine($"{massege},{info}");
-                        else Console.WriteLine(info);
+                        InfoMessage();
                         break;
                     case "/echo":
-                        if (!string.IsNullOrEmpty(massege))
-                            Console.WriteLine(echo);
-                        else
-                            Console.WriteLine("Сначала представьтесь командой '/start'");
+                        EchoMessage(echo);
+                        break;
+                    case "/addtask":
+                        AddTask();
+                        break;
+                    case "/showtasks":
+                        ShowTasks();
+                        break;
+                    case "/removetask":
+                        RemoveTask();
                         break;
                     default:
                         Console.WriteLine("Такой команды не знаю");
+                        Console.WriteLine(separation);
                         break;
                 }
             }
         }
-
         public static void StartMessage()
         {
             if(!string.IsNullOrEmpty(massege))
@@ -65,6 +76,67 @@ namespace Homework1
             Console.WriteLine("Введите имя:");
             massege = Console.ReadLine();
             Console.WriteLine($"Привет, {massege}");
+            Console.WriteLine(separation);
+        }
+        public static void HelpMessage()
+        {
+            if (!string.IsNullOrEmpty(massege))
+                Console.WriteLine($"Я с удовольствием напомню тебе, {massege}, что я могу сделать {iCanDo}");
+            else Console.WriteLine($"Я с удовольствием напомню тебе, что я могу сделать {iCanDo}");
+            Console.WriteLine(separation);
+
+        }
+        public static void InfoMessage()
+        {
+            if (!string.IsNullOrEmpty(massege))
+                Console.WriteLine($"{massege},{info}");
+            else Console.WriteLine(info);
+            Console.WriteLine(separation);
+        }
+        public static void EchoMessage(string massege)
+        {
+            if (!string.IsNullOrEmpty(massege))
+                Console.WriteLine(massege);
+            else
+                Console.WriteLine("Сначала представьтесь командой '/start'");
+            Console.WriteLine(separation);
+
+        }
+        public static void AddTask()
+        {
+            Console.WriteLine("\nНапишите необходимую задачу:");
+            string whatNeedDo = Console.ReadLine();
+            doList.Add(whatNeedDo);
+            Console.WriteLine(separation);
+        }
+        public static void ShowTasks()
+        {
+            Console.WriteLine("\nВот список дел:");
+            for (int i=0; i<doList.Count; i++) //string s in doList)
+            {
+                Console.WriteLine($"{i+1} {doList[i]}");
+            }
+            Console.WriteLine(separation);
+        }
+        public static void RemoveTask() 
+        {
+            if (doList.Count == 0)
+            {
+                Console.WriteLine("Список для удаления пуст. Для начала введите задачи с помощью команды '/addtask'");
+                Console.WriteLine(separation);
+                return;
+            }
+            Console.WriteLine("Введите номер задачи для удаления");
+            int needRemove = Convert.ToInt32(Console.ReadLine());
+            if (needRemove > doList.Count)
+            {
+                Console.WriteLine("Введен неверный номер задачи, пожалуйста, попробуйте заново");
+                Console.WriteLine(separation);
+                return;
+            }
+            doList.RemoveAt(needRemove - 1);
+            Console.WriteLine("Задача удалена");
+            Console.WriteLine(separation);
         }
     }
 }
