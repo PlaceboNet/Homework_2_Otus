@@ -106,36 +106,56 @@ namespace Homework1
         {
             Console.WriteLine("\nНапишите необходимую задачу:");
             string whatNeedDo = Console.ReadLine();
+            if (string.IsNullOrWhiteSpace(whatNeedDo))
+            {
+                Console.WriteLine("\nНапишите необходимую задачу:");
+                whatNeedDo = Console.ReadLine();
+            }
             doList.Add(whatNeedDo);
             Console.WriteLine(separation);
         }
-        public static void ShowTasks()
-        {
-            Console.WriteLine("\nВот список дел:");
-            for (int i=0; i<doList.Count; i++) //string s in doList)
-            {
-                Console.WriteLine($"{i+1} {doList[i]}");
-            }
-            Console.WriteLine(separation);
-        }
-        public static void RemoveTask() 
+        public static bool ShowTasks()
         {
             if (doList.Count == 0)
             {
                 Console.WriteLine("Список для удаления пуст. Для начала введите задачи с помощью команды '/addtask'");
                 Console.WriteLine(separation);
-                return;
+                return false;
             }
-            Console.WriteLine("Введите номер задачи для удаления");
-            int needRemove = Convert.ToInt32(Console.ReadLine());
-            if (needRemove > doList.Count)
+            Console.WriteLine("\nВот список дел:");
+            for (int i = 0; i < doList.Count; i++)
             {
-                Console.WriteLine("Введен неверный номер задачи, пожалуйста, попробуйте заново");
+                Console.WriteLine($"{i+1} {doList[i]}");
+                
+            }
+            Console.WriteLine(separation);
+            return true;
+        }
+        public static void RemoveTask()
+        {
+            if (!ShowTasks())
+                return;
+
+            Console.WriteLine("Введите номер задачи для удаления:");
+            string inputRemove = Console.ReadLine();
+
+            int nTask = 0;
+            if (!int.TryParse(inputRemove, out nTask))
+            {
+                Console.WriteLine("Неверный ввод. Укажите число.");
                 Console.WriteLine(separation);
                 return;
             }
-            doList.RemoveAt(needRemove - 1);
-            Console.WriteLine("Задача удалена");
+
+            if (nTask > doList.Count || nTask <= 0)
+            {
+                Console.WriteLine("Нет задачи с таким номером, проверьте введенный номер.");
+                Console.WriteLine(separation);
+                return;
+            }
+
+            doList.RemoveAt(nTask - 1);
+            Console.WriteLine("Задача успешно удалена.");
             Console.WriteLine(separation);
         }
     }
