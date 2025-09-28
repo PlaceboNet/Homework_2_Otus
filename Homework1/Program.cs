@@ -21,57 +21,139 @@ namespace Homework1
         public static string input;
         public static string echo;
         public static string separation = "---------------------------";
-
+        public static int MaxTask;
+        public static int MaxLength;
         static void Main(string[] args)
         {
             Console.WriteLine($"Привет! {iCanDo}");
-
+            Console.WriteLine("Введите максимально допустимое количество задач");
+            MaxTask = Convert.ToInt32(Console.ReadLine());
+            if (MaxTask > 100 || MaxTask < 1)
+            {
+                throw new ArgumentException("Максимальное количество задач должно быть числом от 1 до 100.");
+            }
+            Console.WriteLine("Введите максимально допустимую длину задачи");
+            MaxLength = Convert.ToInt32(Console.ReadLine());
+            if (MaxLength > 100 || MaxLength < 1)
+            {
+                throw new ArgumentException("Максимально допустимая длина задачи должно быть числом от 1 до 100.");
+            }
             while (true)
             {
-                Console.Write("Введите команду: ");
-                input = Console.ReadLine();
-                string echo = string.Empty;
-                if (input.Contains(" "))
+                try
                 {
-                    echo = input.Split(" ")[1];
-                    input = input.Split(" ")[0];
+                    Console.Write("Введите команду: ");
+                    input = Console.ReadLine();
+                    string echo = string.Empty;
+                    if (input.Contains(" "))
+                    {
+                        echo = input.Substring(input.Split(" ")[0].Length).Trim();
+                        input = input.Split(" ")[0];
+                    }
+
+                    if (input == "/exit") break;
+
+                    switch (input)
+                    {
+                        case "/start":
+                            StartMessage();
+                            break;
+                        case "/help":
+                            HelpMessage();
+                            break;
+                        case "/info":
+                            InfoMessage();
+                            break;
+                        case "/echo":
+                            EchoMessage(echo);
+                            break;
+                        case "/addtask":
+                            AddTask();
+                            break;
+                        case "/showtasks":
+                            ShowTasks();
+                            break;
+                        case "/removetask":
+                            RemoveTask();
+                            break;
+                        default:
+                            UnknownCommand();
+                            break;
+                    }
+                }
+                catch (ArgumentException ex)
+                {
+                    Console.WriteLine(ex.Message);
+                    Console.WriteLine(separation);
+                }
+                catch (TaskCountLimitException ex)
+                {
+                    Console.WriteLine(ex.Message);
+                    Console.WriteLine(separation);
+                }
+                catch (TaskLengthLimitException ex)
+                {
+                    Console.WriteLine(ex.Message);
+                    Console.WriteLine(separation);
+                }
+                catch (DuplicateTaskException ex)
+                {
+                    Console.WriteLine(ex.Message);
+                    Console.WriteLine(separation);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Произошла непредвиденная ошибка: {ex.Message}");
+                    Console.WriteLine(separation);
                 }
 
-                if (input == "/exit") break;
-
-                switch (input)
-                {
-                    case "/start":
-                        StartMessage();
-                        break;
-                    case "/help":
-                        HelpMessage();
-                        break;
-                    case "/info":
-                        InfoMessage();
-                        break;
-                    case "/echo":
-                        EchoMessage(echo);
-                        break;
-                    case "/addtask":
-                        AddTask();
-                        break;
-                    case "/showtasks":
-                        ShowTasks();
-                        break;
-                    case "/removetask":
-                        RemoveTask();
-                        break;
-                    default:
-                        Console.WriteLine("Такой команды не знаю");
-                        Console.WriteLine(separation);
-                        break;
-                }
             }
         }
+        private static void UnknownCommand()
+        {
+            Console.WriteLine("Такой команды не знаю");
+            Console.WriteLine(separation);
+        }
+        public static int ParseAndValidateInt(string? str, int min, int max)
+        {
+            if (string.IsNullOrWhiteSpace(str))
+            {
+                throw new ArgumentException("Входная строка не может быть пустой или null.");
+            }
+
+            if (!int.TryParse(str, out int result))
+            {
+                throw new ArgumentException($"Невозможно преобразовать '{str}' в число.");
+            }
+
+            if (result < min || result > max)
+            {
+                throw new ArgumentException($"Число {result} должно быть в диапазоне от {min} до {max}.");
+            }
+
+            return result;
+        }
+        public static void ValidateString(string? str)
+        {
+            if (str == null)
+            {
+                throw new ArgumentException("Строка не может быть null.");
+            }
+
+            if (string.IsNullOrEmpty(str))
+            {
+                throw new ArgumentException("Строка не может быть пустой.");
+            }
+
+            if (string.IsNullOrWhiteSpace(str))
+            {
+                throw new ArgumentException("Строка не может содержать только пробелы.");
+            }
+        }
+
         public static void StartMessage()
         {
-            if(!string.IsNullOrEmpty(massege))
+            if (!string.IsNullOrEmpty(massege))
                 return;
             Console.WriteLine("Введите имя:");
             massege = Console.ReadLine();
@@ -104,12 +186,25 @@ namespace Homework1
         }
         public static void AddTask()
         {
-            Console.WriteLine("\nНапишите необходимую задачу:");
-            string whatNeedDo = Console.ReadLine();
-            if (string.IsNullOrWhiteSpace(whatNeedDo))
+            if (doList.Count >= MaxTask)
             {
-                Console.WriteLine("\nНапишите необходимую задачу:");
-                whatNeedDo = Console.ReadLine();
+                throw new TaskCountLimitException(MaxTask);
+            }
+
+            Console.WriteLine("\nНапишите необходимую задачу:");
+            string whatNeedDo = Console.ReadLine().Trim();
+            if (whatNeedDo.Length > MaxLength)
+            {
+                throw new TaskLengthLimitException(whatNeedDo.Length, MaxLength);
+            }
+            if (doList.Contains(whatNeedDo))
+            {
+                throw new DuplicateTaskException(whatNeedDo);
+            }
+            while (string.IsNullOrEmpty(whatNeedDo))
+            {
+                Console.WriteLine("\nЗадача должна содержать текст!");
+                whatNeedDo = Console.ReadLine().Trim();
             }
             doList.Add(whatNeedDo);
             Console.WriteLine(separation);
@@ -125,37 +220,32 @@ namespace Homework1
             Console.WriteLine("\nВот список дел:");
             for (int i = 0; i < doList.Count; i++)
             {
-                Console.WriteLine($"{i+1} {doList[i]}");
-                
+                Console.WriteLine($"{i + 1} {doList[i]}");
+
             }
             Console.WriteLine(separation);
             return true;
         }
         public static void RemoveTask()
         {
+
             if (!ShowTasks())
                 return;
 
             Console.WriteLine("Введите номер задачи для удаления:");
             string inputRemove = Console.ReadLine();
 
-            int nTask = 0;
-            if (!int.TryParse(inputRemove, out nTask))
+            try
             {
-                Console.WriteLine("Неверный ввод. Укажите число.");
-                Console.WriteLine(separation);
-                return;
+                int nTask = ParseAndValidateInt(inputRemove, 1, doList.Count);
+                doList.RemoveAt(nTask - 1);
+                Console.WriteLine("Задача успешно удалена.");
+            }
+            catch (ArgumentException ex)
+            {
+                Console.WriteLine($"Ошибка: {ex.Message}");
             }
 
-            if (nTask > doList.Count || nTask <= 0)
-            {
-                Console.WriteLine("Нет задачи с таким номером, проверьте введенный номер.");
-                Console.WriteLine(separation);
-                return;
-            }
-
-            doList.RemoveAt(nTask - 1);
-            Console.WriteLine("Задача успешно удалена.");
             Console.WriteLine(separation);
         }
     }
