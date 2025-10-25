@@ -1,11 +1,14 @@
 ﻿using Microsoft.VisualBasic;
 using System;
+using System.Linq;
 using System.Security.Cryptography.X509Certificates;
+using static Homework1.ToDoItem;
 
 namespace Homework1
 {
     internal class Program
     {
+        private static ToDoUser currentUser;
         private static string massege;
         private static string iCanDo = "\nЯ могу выполнить несколько команд:" +
                 "\n/start - программа просит ввести имя" +
@@ -15,9 +18,11 @@ namespace Homework1
                 "\n/exit - выйти из программы" +
                 "\n/addtask - добавить новую задачу в список" +
                 "\n/showtasks - отобразить список всех добавленных задач" +
-                "\n/removetask - удалять задачи по номеру в списке\n";
+                "\n/removetask - удалять задачи по номеру в списке" +
+                "\n/completetask - найти задачу по id" +
+                "\n/showalltasks - выводить команды с любым State\n";
         private static string info = "Версия 0.0.1\n27.08.2025";
-        public static List<string> doList = new List<string>();
+        public static List<ToDoItem> doList = new List<ToDoItem>();
         public static string input;
         public static string echo;
         public static string separation = "---------------------------";
@@ -72,6 +77,12 @@ namespace Homework1
                             break;
                         case "/showtasks":
                             ShowTasks();
+                            break;
+                        case "/showalltasks":
+                            ShowAllTasks();
+                            break;
+                        case "/completetask":
+                            CompleteTask(echo);
                             break;
                         case "/removetask":
                             RemoveTask();
@@ -153,26 +164,28 @@ namespace Homework1
 
         public static void StartMessage()
         {
-            if (!string.IsNullOrEmpty(massege))
+            if (currentUser != null)
                 return;
             Console.WriteLine("Введите имя:");
-            massege = Console.ReadLine();
-            Console.WriteLine($"Привет, {massege}");
+            string userName = Console.ReadLine();
+            currentUser = new ToDoUser(userName);
+            Console.WriteLine($"Привет, {currentUser.TelegramUserName}");
             Console.WriteLine(separation);
         }
         public static void HelpMessage()
         {
-            if (!string.IsNullOrEmpty(massege))
-                Console.WriteLine($"Я с удовольствием напомню тебе, {massege}, что я могу сделать {iCanDo}");
-            else Console.WriteLine($"Я с удовольствием напомню тебе, что я могу сделать {iCanDo}");
+            if (currentUser != null)
+                Console.WriteLine($"Я с удовольствием напомню тебе, {currentUser.TelegramUserName}, что я могу сделать {iCanDo}");
+            else
+                Console.WriteLine($"Я с удовольствием напомню тебе, что я могу сделать {iCanDo}");
             Console.WriteLine(separation);
-
         }
         public static void InfoMessage()
         {
-            if (!string.IsNullOrEmpty(massege))
-                Console.WriteLine($"{massege},{info}");
-            else Console.WriteLine(info);
+            if (currentUser != null)
+                Console.WriteLine($"{currentUser.TelegramUserName},{info}");
+            else
+                Console.WriteLine(info);
             Console.WriteLine(separation);
         }
         public static void EchoMessage(string massege)
@@ -191,41 +204,113 @@ namespace Homework1
                 throw new TaskCountLimitException(MaxTask);
             }
 
+            if (currentUser == null)
+            {
+                Console.WriteLine("Сначала представьтесь командой '/start'");
+                Console.WriteLine(separation);
+                return;
+            }
+
             Console.WriteLine("\nНапишите необходимую задачу:");
             string whatNeedDo = Console.ReadLine().Trim();
+
             if (whatNeedDo.Length > MaxLength)
             {
                 throw new TaskLengthLimitException(whatNeedDo.Length, MaxLength);
             }
-            if (doList.Contains(whatNeedDo))
+
+            // Проверка на дубликаты по имени задачи
+            if (doList.Any(task => task.Name.Equals(whatNeedDo, StringComparison.OrdinalIgnoreCase)))
             {
                 throw new DuplicateTaskException(whatNeedDo);
             }
+
             while (string.IsNullOrEmpty(whatNeedDo))
             {
                 Console.WriteLine("\nЗадача должна содержать текст!");
                 whatNeedDo = Console.ReadLine().Trim();
             }
-            doList.Add(whatNeedDo);
+
+            ToDoItem newTask = new ToDoItem(currentUser, whatNeedDo);
+            doList.Add(newTask);
+            Console.WriteLine($"Задача добавлена с ID: {newTask.Id}");
             Console.WriteLine(separation);
         }
+
         public static bool ShowTasks()
         {
-            if (doList.Count == 0)
+            var activeTasks = doList.Where(task => task.State == ToDoItemState.Active).ToList();
+
+            if (activeTasks.Count == 0)
             {
-                Console.WriteLine("Список для удаления пуст. Для начала введите задачи с помощью команды '/addtask'");
+                Console.WriteLine("Список активных задач пуст. Для начала введите задачи с помощью команды '/addtask'");
                 Console.WriteLine(separation);
                 return false;
             }
-            Console.WriteLine("\nВот список дел:");
-            for (int i = 0; i < doList.Count; i++)
-            {
-                Console.WriteLine($"{i + 1} {doList[i]}");
 
+            Console.WriteLine("\nВот список активных дел:");
+            for (int i = 0; i < activeTasks.Count; i++)
+            {
+                var task = activeTasks[i];
+                Console.WriteLine($"{i + 1}. {task.Name} - {task.CreatedAt:dd.MM.yyyy HH:mm:ss} - {task.Id}");
             }
             Console.WriteLine(separation);
             return true;
         }
+        public static void ShowAllTasks()
+        {
+            if (doList.Count == 0)
+            {
+                Console.WriteLine("Список задач пуст. Для начала введите задачи с помощью команды '/addtask'");
+                Console.WriteLine(separation);
+                return;
+            }
+
+            Console.WriteLine("\nВот список всех задач:");
+            for (int i = 0; i < doList.Count; i++)
+            {
+                var task = doList[i];
+                string state = task.State == ToDoItemState.Active ? "(Active)" : "(Completed)";
+                Console.WriteLine($"{i + 1}. {state} {task.Name} - {task.CreatedAt:dd.MM.yyyy HH:mm:ss} - {task.Id}");
+            }
+            Console.WriteLine(separation);
+        }
+        public static void CompleteTask(string taskId)
+        {
+            if (string.IsNullOrWhiteSpace(taskId))
+            {
+                Console.WriteLine("Не указан ID задачи. Использование: /completetask <ID_задачи>");
+                Console.WriteLine(separation);
+                return;
+            }
+
+            if (!Guid.TryParse(taskId, out Guid id))
+            {
+                Console.WriteLine("Неверный формат ID задачи.");
+                Console.WriteLine(separation);
+                return;
+            }
+
+            var task = doList.FirstOrDefault(t => t.Id == id);
+            if (task == null)
+            {
+                Console.WriteLine($"Задача с ID {id} не найдена.");
+                Console.WriteLine(separation);
+                return;
+            }
+
+            if (task.State == ToDoItemState.Completed)
+            {
+                Console.WriteLine("Задача уже завершена.");
+                Console.WriteLine(separation);
+                return;
+            }
+
+            task.Complete();
+            Console.WriteLine($"Задача '{task.Name}' завершена.");
+            Console.WriteLine(separation);
+        }
+
         public static void RemoveTask()
         {
 
