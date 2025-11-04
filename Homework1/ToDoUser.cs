@@ -3,20 +3,22 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Otus.ToDoList.ConsoleBot;
+using Otus.ToDoList.ConsoleBot.Types;
 
 namespace Homework1
 {
-    internal class ToDoUser
+    public class ToDoUser
     {
-        public Guid UserId { get; } // Заполняется в конструкторе
-        public string TelegramUserName { get; } // Имя пользователя
-        public DateTime RegisteredAt { get; } // Заполняется в конструкторе
+        public Guid Id { get; }
+        public long TelegramUserId { get; }
+        public string TelegramUserName { get; }
 
-        public ToDoUser(string telegramUserName)
+        public ToDoUser(long telegramUserId, string telegramUserName)
         {
-            UserId = Guid.NewGuid();
+            Id = Guid.NewGuid();
+            TelegramUserId = telegramUserId;
             TelegramUserName = telegramUserName;
-            RegisteredAt = DateTime.UtcNow;
         }
     }
 }

@@ -3,38 +3,37 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Otus.ToDoList.ConsoleBot;
+using Otus.ToDoList.ConsoleBot.Types;
 
 namespace Homework1
 {
-    internal class ToDoItem
+    public class ToDoItem
     {
-        public enum ToDoItemState
-        {
-            Active,
-            Completed
-        }
         public Guid Id { get; }
-        public ToDoUser User { get; }
+        public Guid UserId { get; }  // Добавьте это свойство
         public string Name { get; }
         public DateTime CreatedAt { get; }
         public ToDoItemState State { get; private set; }
-        public DateTime? StateChangedAt { get; private set; }
 
         public ToDoItem(ToDoUser user, string name)
         {
             Id = Guid.NewGuid();
-            User = user;
+            UserId = user.Id;  // Сохраняем ID пользователя
             Name = name;
-            CreatedAt = DateTime.UtcNow;
+            CreatedAt = DateTime.Now;
             State = ToDoItemState.Active;
-            StateChangedAt = null;
         }
 
-        // Метод для завершения задачи
         public void Complete()
         {
             State = ToDoItemState.Completed;
-            StateChangedAt = DateTime.UtcNow;
         }
+    }
+
+    public enum ToDoItemState
+    {
+        Active,
+        Completed
     }
 }

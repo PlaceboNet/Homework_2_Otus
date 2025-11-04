@@ -5,6 +5,8 @@ VisualStudioVersion = 17.9.34607.119
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Homework1", "Homework1\Homework1.csproj", "{9548D7E1-9A32-457D-9870-7407E4DB17EE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Otus.ToDoList.ConsoleBot", "..\05.2 ООП интерфейсы\Otus.ToDoList.ConsoleBot\Otus.ToDoList.ConsoleBot.csproj", "{93E810E3-F5C9-1F40-E9A8-F9E9285ABBBC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{9548D7E1-9A32-457D-9870-7407E4DB17EE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9548D7E1-9A32-457D-9870-7407E4DB17EE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9548D7E1-9A32-457D-9870-7407E4DB17EE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{93E810E3-F5C9-1F40-E9A8-F9E9285ABBBC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{93E810E3-F5C9-1F40-E9A8-F9E9285ABBBC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{93E810E3-F5C9-1F40-E9A8-F9E9285ABBBC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{93E810E3-F5C9-1F40-E9A8-F9E9285ABBBC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
