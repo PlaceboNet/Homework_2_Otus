@@ -14,6 +14,12 @@ namespace Homework1
         private readonly IUserService _userService;
         private readonly IToDoService _toDoService;
 
+        public UpdateHandler()
+        {
+            _userService = new UserService();
+            _toDoService = new ToDoService(Program.MaxTask, Program.MaxLength);
+        }
+
         public UpdateHandler(IUserService userService, IToDoService toDoService)
         {
             _userService = userService;
@@ -37,7 +43,6 @@ namespace Homework1
                 if (user == null && !messageText.StartsWith("/start") &&
                     !messageText.StartsWith("/help") && !messageText.StartsWith("/info"))
                 {
-                    // Просто вызываем метод без .GetAwaiter().GetResult()
                     botClient.SendMessage(chat, "Пожалуйста, сначала зарегистрируйтесь с помощью команды /start");
                     return;
                 }

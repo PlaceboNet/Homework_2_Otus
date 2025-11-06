@@ -26,33 +26,25 @@ namespace Homework1
         public static int MaxTask;
         public static int MaxLength;
 
-        
-
-        static void Main(string[] args)
+        static void Main(Update update, ConsoleBotClient botClient)
         {
-            Console.WriteLine($"Привет! {iCanDo}");
-            Console.WriteLine("Введите максимально допустимое количество задач");
-            MaxTask = Convert.ToInt32(Console.ReadLine());
-            if (MaxTask > 100 || MaxTask < 1)
-            {
-                throw new ArgumentException("Максимальное количество задач должно быть числом от 1 до 100.");
-            }
-            Console.WriteLine("Введите максимально допустимую длину задачи");
-            MaxLength = Convert.ToInt32(Console.ReadLine());
-            if (MaxLength > 100 || MaxLength < 1)
-            {
-                throw new ArgumentException("Максимально допустимая длина задачи должно быть числом от 1 до 100.");
-            }
-
-            var userService = new UserService();
-            var toDoService = new ToDoService(MaxTask, MaxLength);
-            var updateHandler = new UpdateHandler(userService, toDoService);
-            var botClient = new ConsoleBotClient();
-
-            while (true)
+            do
             {
                 try
                 {
+                    Console.WriteLine($"Привет! {iCanDo}");
+                    Console.WriteLine("Введите максимально допустимое количество задач");
+                    MaxTask = Convert.ToInt32(Console.ReadLine());
+                    if (MaxTask > 100 || MaxTask < 1)
+                    {
+                        throw new ArgumentException("Максимальное количество задач должно быть числом от 1 до 100.");
+                    }
+                    Console.WriteLine("Введите максимально допустимую длину задачи");
+                    MaxLength = Convert.ToInt32(Console.ReadLine());
+                    if (MaxLength > 100 || MaxLength < 1)
+                    {
+                        throw new ArgumentException("Максимально допустимая длина задачи должно быть числом от 1 до 100.");
+                    }
                     Console.Write("Введите команду: ");
                     var input = Console.ReadLine();
 
@@ -67,24 +59,24 @@ namespace Homework1
                     if (input == "/exit")
                         break;
 
-                    //var update = new Update
-                    //{
-                    //    Message = new Message
-                    //    {
-                    //        Text = input,
-                    //        Chat = chat,
-                    //        From = user
-                    //    }
-                    //};
-                    //updateHandler.HandleUpdateAsync(botClient, update);
+                    var userService = new UserService();
+                    var toDoService = new ToDoService(MaxTask, MaxLength);
+                    var updateHandler = new UpdateHandler(userService, toDoService);
+                    updateHandler.HandleUpdateAsync(botClient, update);
+
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Произошла ошибка: {ex.Message}");
                     Console.WriteLine(separation);
                 }
+                {
 
+                }
             }
+
+
+            while (true);
         }
     }
 }
