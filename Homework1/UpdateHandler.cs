@@ -38,6 +38,8 @@ namespace Homework1
                 var telegramUserId = update.Message.From.Id;
                 var telegramUserName = update.Message.From.Username ?? $"User_{telegramUserId}";
 
+                Console.WriteLine($"Обрабатывается команда: {messageText}");
+
                 var user = _userService.GetUser(telegramUserId);
 
                 if (user == null && !messageText.StartsWith("/start") &&

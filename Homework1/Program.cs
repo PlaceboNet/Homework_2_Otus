@@ -26,57 +26,27 @@ namespace Homework1
         public static int MaxTask;
         public static int MaxLength;
 
-        static void Main(Update update, ConsoleBotClient botClient)
+        static void Main(string[] args)
         {
-            do
+            Console.WriteLine($"Привет! {iCanDo}");
+            Console.WriteLine("Введите максимально допустимое количество задач");
+            MaxTask = Convert.ToInt32(Console.ReadLine());
+            if (MaxTask > 100 || MaxTask < 1)
             {
-                try
-                {
-                    Console.WriteLine($"Привет! {iCanDo}");
-                    Console.WriteLine("Введите максимально допустимое количество задач");
-                    MaxTask = Convert.ToInt32(Console.ReadLine());
-                    if (MaxTask > 100 || MaxTask < 1)
-                    {
-                        throw new ArgumentException("Максимальное количество задач должно быть числом от 1 до 100.");
-                    }
-                    Console.WriteLine("Введите максимально допустимую длину задачи");
-                    MaxLength = Convert.ToInt32(Console.ReadLine());
-                    if (MaxLength > 100 || MaxLength < 1)
-                    {
-                        throw new ArgumentException("Максимально допустимая длина задачи должно быть числом от 1 до 100.");
-                    }
-                    Console.Write("Введите команду: ");
-                    var input = Console.ReadLine();
-
-                    if (string.IsNullOrEmpty(input))
-                    {
-                        Console.WriteLine("Пустая команда. Пожалуйста, введите команду из списка:");
-                        Console.WriteLine(iCanDo);
-                        Console.WriteLine(separation);
-                        continue;
-                    }
-
-                    if (input == "/exit")
-                        break;
-
-                    var userService = new UserService();
-                    var toDoService = new ToDoService(MaxTask, MaxLength);
-                    var updateHandler = new UpdateHandler(userService, toDoService);
-                    updateHandler.HandleUpdateAsync(botClient, update);
-
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Произошла ошибка: {ex.Message}");
-                    Console.WriteLine(separation);
-                }
-                {
-
-                }
+                throw new ArgumentException("Максимальное количество задач должно быть числом от 1 до 100.");
+            }
+            Console.WriteLine("Введите максимально допустимую длину задачи");
+            MaxLength = Convert.ToInt32(Console.ReadLine());
+            if (MaxLength > 100 || MaxLength < 1)
+            {
+                throw new ArgumentException("Максимально допустимая длина задачи должно быть числом от 1 до 100.");
             }
 
-
-            while (true);
+            var userService = new UserService();
+            var toDoService = new ToDoService(MaxTask, MaxLength);
+            var updateHandler = new UpdateHandler(userService, toDoService);
+            var botClient = new ConsoleBotClient();
+            botClient.StartReceiving(updateHandler);
         }
     }
 }
