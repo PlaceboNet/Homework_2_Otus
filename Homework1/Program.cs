@@ -1,10 +1,13 @@
-﻿using Microsoft.VisualBasic;
+﻿using Homework1.Core.Services;
+using Homework1.Infrastructure.DataAccess;
+using Homework1.TelegramBot;
+using Microsoft.VisualBasic;
 using Otus.ToDoList.ConsoleBot;
 using Otus.ToDoList.ConsoleBot.Types;
 using System;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
-using static Homework1.ToDoItem;
+using static Homework1.Core.Entities.ToDoItem;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Homework1
@@ -20,7 +23,9 @@ namespace Homework1
             "\n/showtasks - отобразить список всех добавленных задач" +
             "\n/removetask - удалять задачи по номеру в списке" +
             "\n/completetask - найти задачу по id" +
-            "\n/showalltasks - выводить команды с любым State\n";
+            "\n/showalltasks - выводить команды с любым State" +
+            "\n/report - cтатистика по задачам" +
+            "\n/find - отобразить список всех добавленных задач\n";
         private static string info = "Версия 0.0.1\n27.08.2025";
         public static string separation = "---------------------------";
         public static int MaxTask;
@@ -41,10 +46,15 @@ namespace Homework1
             {
                 throw new ArgumentException("Максимально допустимая длина задачи должно быть числом от 1 до 100.");
             }
+            var userRepository = new InMemoryUserRepository();
+            var toDoRepository = new InMemoryToDoRepository();
 
-            var userService = new UserService();
-            var toDoService = new ToDoService(MaxTask, MaxLength);
-            var updateHandler = new UpdateHandler(userService, toDoService);
+            var userService = new UserService(userRepository);
+            var toDoService = new ToDoService(toDoRepository, MaxTask, MaxLength);
+            var reportService = new ToDoReportService(toDoRepository);
+
+            var updateHandler = new UpdateHandler(userService, toDoService, reportService);
+
             var botClient = new ConsoleBotClient();
             botClient.StartReceiving(updateHandler);
         }

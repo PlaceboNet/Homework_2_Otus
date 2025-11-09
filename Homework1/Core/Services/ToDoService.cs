@@ -1,40 +1,44 @@
-﻿using System;
+﻿using Homework1.Core.DataAccess;
+using Homework1.Core.Entities;
+using Homework1.Core.Exceptions;
+using Otus.ToDoList.ConsoleBot;
+using Otus.ToDoList.ConsoleBot.Types;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static Homework1.ToDoItem;
-using Otus.ToDoList.ConsoleBot;
-using Otus.ToDoList.ConsoleBot.Types;
+using static Homework1.Core.Entities.ToDoItem;
 
-namespace Homework1
+namespace Homework1.Core.Services
 {
     public class ToDoService : IToDoService
     {
-        private readonly List<ToDoItem> _tasks = new List<ToDoItem>();
+        private readonly IToDoRepository _toDoRepository;
         private readonly int _maxTaskCount;
         private readonly int _maxTaskLength;
 
-        public ToDoService(int maxTaskCount, int maxTaskLength)
+        public ToDoService(IToDoRepository toDoRepository, int maxTaskCount, int maxTaskLength)
         {
+            _toDoRepository = toDoRepository;
             _maxTaskCount = maxTaskCount;
             _maxTaskLength = maxTaskLength;
         }
 
         public IReadOnlyList<ToDoItem> GetAllByUserId(Guid userId)
         {
-            return _tasks.Where(t => t.UserId == userId).ToList();
+            return _toDoRepository.GetAllByUserId(userId);
         }
 
         public IReadOnlyList<ToDoItem> GetActiveByUserId(Guid userId)
         {
-            return _tasks.Where(t => t.UserId == userId && t.State == ToDoItemState.Active).ToList();
+            return _toDoRepository.GetActiveByUserId(userId);
         }
 
         public ToDoItem Add(ToDoUser user, string name)
         {
             // Проверка максимального количества задач
-            var userTasksCount = _tasks.Count(t => t.UserId == user.Id);
+            var userTasksCount = _toDoRepository.CountActive(user.Id);
             if (userTasksCount >= _maxTaskCount)
             {
                 throw new TaskCountLimitException(_maxTaskCount);
@@ -47,20 +51,19 @@ namespace Homework1
             }
 
             // Проверка на дубликаты
-            if (_tasks.Any(task => task.UserId == user.Id &&
-                task.Name.Equals(name, StringComparison.OrdinalIgnoreCase)))
+            if (_toDoRepository.ExistsByName(user.Id, name))
             {
                 throw new DuplicateTaskException(name);
             }
 
             var newTask = new ToDoItem(user, name);
-            _tasks.Add(newTask);
+            _toDoRepository.Add(newTask);
             return newTask;
         }
 
         public void MarkCompleted(Guid id)
         {
-            var task = _tasks.FirstOrDefault(t => t.Id == id);
+            var task = _toDoRepository.Get(id);
             if (task == null)
             {
                 throw new ArgumentException($"Задача с ID {id} не найдена.");
@@ -72,17 +75,18 @@ namespace Homework1
             }
 
             task.Complete();
+            _toDoRepository.Update(task);
         }
 
         public void Delete(Guid id)
         {
-            var task = _tasks.FirstOrDefault(t => t.Id == id);
-            if (task == null)
-            {
-                throw new ArgumentException($"Задача с ID {id} не найдена.");
-            }
+            _toDoRepository.Delete(id);
+        }
 
-            _tasks.Remove(task);
+        public IReadOnlyList<ToDoItem> Find(ToDoUser user, string namePrefix)
+        {
+            return _toDoRepository.Find(user.Id, task =>
+                task.Name.StartsWith(namePrefix, StringComparison.OrdinalIgnoreCase));
         }
     }
 }

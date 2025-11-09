@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 using Otus.ToDoList.ConsoleBot;
 using Otus.ToDoList.ConsoleBot.Types;
 
-namespace Homework1
+namespace Homework1.Core.Exceptions
 {
-    public class DuplicateTaskException : System.Exception
+    public class DuplicateTaskException : Exception
     {
         public string Task { get; }
 

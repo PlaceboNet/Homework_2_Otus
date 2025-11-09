@@ -3,27 +3,26 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static Homework1.ToDoItem;
+using static Homework1.Core.Entities.ToDoItem;
 using Otus.ToDoList.ConsoleBot;
 using Otus.ToDoList.ConsoleBot.Types;
+using Homework1.Core.DataAccess;
+using Homework1.Core.Entities;
+using Homework1.Core.Services;
 
-namespace Homework1
+namespace Homework1.TelegramBot
 {
     public class UpdateHandler : IUpdateHandler
     {
         private readonly IUserService _userService;
         private readonly IToDoService _toDoService;
+        private readonly IToDoReportService _reportService;
 
-        public UpdateHandler()
-        {
-            _userService = new UserService();
-            _toDoService = new ToDoService(Program.MaxTask, Program.MaxLength);
-        }
-
-        public UpdateHandler(IUserService userService, IToDoService toDoService)
+        public UpdateHandler(IUserService userService, IToDoService toDoService, IToDoReportService reportService)
         {
             _userService = userService;
             _toDoService = toDoService;
+            _reportService = reportService;
         }
 
         public void HandleUpdateAsync(ITelegramBotClient botClient, Update update)
@@ -37,8 +36,6 @@ namespace Homework1
                 var chat = update.Message.Chat;
                 var telegramUserId = update.Message.From.Id;
                 var telegramUserName = update.Message.From.Username ?? $"User_{telegramUserId}";
-
-                Console.WriteLine($"Обрабатывается команда: {messageText}");
 
                 var user = _userService.GetUser(telegramUserId);
 
@@ -81,6 +78,12 @@ namespace Homework1
                         case "/removetask":
                             HandleRemoveTaskCommand(botClient, chat, user, argument);
                             break;
+                        case "/report":
+                            HandleReportCommand(botClient, chat, user);
+                            break;
+                        case "/find":
+                            HandleFindCommand(botClient, chat, user, argument);
+                            break;
                         case "/exit":
                             botClient.SendMessage(chat, "До свидания!");
                             break;
@@ -122,13 +125,63 @@ namespace Homework1
                     "\n/exit - выйти из программы" +
                     "\n/addtask - добавить новую задачу в список" +
                     "\n/showtasks - отобразить список всех добавленных задач" +
+                    "\n/showalltasks - выводить команды с любым State" +
                     "\n/removetask - удалять задачи по номеру в списке" +
                     "\n/completetask - найти задачу по id" +
-                    "\n/showalltasks - выводить команды с любым State\n";
+                    "\n/report - показать статистику по задачам" +
+                    "\n/find - найти задачи по названию\n";
 
             var message = user != null
                 ? $"{user.TelegramUserName}, вот что я могу сделать:{helpText}"
                 : $"Вот что я могу сделать:{helpText}";
+
+            botClient.SendMessage(chat, message);
+        }
+
+        private void HandleReportCommand(ITelegramBotClient botClient, Chat chat, ToDoUser user)
+        {
+            if (user == null)
+            {
+                botClient.SendMessage(chat, "Сначала зарегистрируйтесь с помощью команды /start");
+                return;
+            }
+
+            var stats = _reportService.GetUserStats(user.Id);
+            var message = $"Статистика по задачам на {stats.generatedAt:dd.MM.yyyy HH:mm:ss}. " +
+                         $"Всего: {stats.total}; Завершенных: {stats.completed}; Активных: {stats.active};";
+
+            botClient.SendMessage(chat, message);
+        }
+
+        private void HandleFindCommand(ITelegramBotClient botClient, Chat chat, ToDoUser user, string namePrefix)
+        {
+            if (user == null)
+            {
+                botClient.SendMessage(chat, "Сначала зарегистрируйтесь с помощью команды /start");
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(namePrefix))
+            {
+                botClient.SendMessage(chat, "Пожалуйста, укажите начало названия задачи. Пример: /find Позвонить");
+                return;
+            }
+
+            var foundTasks = _toDoService.Find(user, namePrefix);
+
+            if (foundTasks.Count == 0)
+            {
+                botClient.SendMessage(chat, $"Задачи, начинающиеся на '{namePrefix}', не найдены.");
+                return;
+            }
+
+            var message = $"Найдено задач ({foundTasks.Count}):\n";
+            for (int i = 0; i < foundTasks.Count; i++)
+            {
+                var task = foundTasks[i];
+                string state = task.State == ToDoItemState.Active ? "(Active)" : "(Completed)";
+                message += $"{i + 1}. {state} {task.Name} - {task.CreatedAt:dd.MM.yyyy HH:mm:ss} - {task.Id}\n";
+            }
 
             botClient.SendMessage(chat, message);
         }

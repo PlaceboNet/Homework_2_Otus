@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 using Otus.ToDoList.ConsoleBot;
 using Otus.ToDoList.ConsoleBot.Types;
 
-namespace Homework1
+namespace Homework1.Core.Exceptions
 {
-    public class TaskLengthLimitException : System.Exception
+    public class TaskLengthLimitException : Exception
     {
         public int TaskLength { get; }
         public int TaskLengthLimit { get; }
