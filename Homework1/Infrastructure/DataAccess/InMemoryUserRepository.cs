@@ -12,19 +12,20 @@ namespace Homework1.Infrastructure.DataAccess
     {
         private readonly List<ToDoUser> _users = new List<ToDoUser>();
 
-        public ToDoUser? GetUser(Guid userId)
+        public Task<ToDoUser?> GetUserAsync(Guid userId, CancellationToken cancellationToken = default)
         {
-            return _users.FirstOrDefault(u => u.Id == userId);
+            return Task.FromResult(_users.FirstOrDefault(u => u.Id == userId));
         }
 
-        public ToDoUser? GetUserByTelegramUserId(long telegramUserId)
+        public Task<ToDoUser?> GetUserByTelegramUserIdAsync(long telegramUserId, CancellationToken cancellationToken = default)
         {
-            return _users.FirstOrDefault(u => u.TelegramUserId == telegramUserId);
+            return Task.FromResult(_users.FirstOrDefault(u => u.TelegramUserId == telegramUserId));
         }
 
-        public void Add(ToDoUser user)
+        public Task AddAsync(ToDoUser user, CancellationToken cancellationToken = default)
         {
             _users.Add(user);
+            return Task.CompletedTask;
         }
     }
 }

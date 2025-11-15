@@ -11,7 +11,7 @@ namespace Homework1.Core.Services
 {
     public interface IUserService
     {
-        ToDoUser RegisterUser(long telegramUserId, string telegramUserName);
-        ToDoUser? GetUser(long telegramUserId);
+        Task<ToDoUser> RegisterUserAsync(long telegramUserId, string telegramUserName, CancellationToken cancellationToken = default);
+        Task<ToDoUser?> GetUserAsync(long telegramUserId, CancellationToken cancellationToken = default);
     }
 }

@@ -9,8 +9,8 @@ namespace Homework1.Core.DataAccess
 {
     public interface IUserRepository
     {
-        ToDoUser? GetUser(Guid userId);
-        ToDoUser? GetUserByTelegramUserId(long telegramUserId);
-        void Add(ToDoUser user);
+        Task<ToDoUser?> GetUserAsync(Guid userId, CancellationToken cancellationToken = default);
+        Task<ToDoUser?> GetUserByTelegramUserIdAsync(long telegramUserId, CancellationToken cancellationToken = default);
+        Task AddAsync(ToDoUser user, CancellationToken cancellationToken = default);
     }
 }

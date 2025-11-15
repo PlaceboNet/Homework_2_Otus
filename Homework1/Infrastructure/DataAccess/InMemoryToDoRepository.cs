@@ -12,27 +12,28 @@ namespace Homework1.Infrastructure.DataAccess
     {
         private readonly List<ToDoItem> _tasks = new List<ToDoItem>();
 
-        public IReadOnlyList<ToDoItem> GetAllByUserId(Guid userId)
+        public Task<IReadOnlyList<ToDoItem>> GetAllByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
         {
-            return _tasks.Where(t => t.UserId == userId).ToList();
+            return Task.FromResult((IReadOnlyList<ToDoItem>)_tasks.Where(t => t.UserId == userId).ToList());
         }
 
-        public IReadOnlyList<ToDoItem> GetActiveByUserId(Guid userId)
+        public Task<IReadOnlyList<ToDoItem>> GetActiveByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
         {
-            return _tasks.Where(t => t.UserId == userId && t.State == ToDoItemState.Active).ToList();
+            return Task.FromResult((IReadOnlyList<ToDoItem>)_tasks.Where(t => t.UserId == userId && t.State == ToDoItemState.Active).ToList());
         }
 
-        public ToDoItem? Get(Guid id)
+        public Task<ToDoItem?> GetAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            return _tasks.FirstOrDefault(t => t.Id == id);
+            return Task.FromResult(_tasks.FirstOrDefault(t => t.Id == id));
         }
 
-        public void Add(ToDoItem item)
+        public Task AddAsync(ToDoItem item, CancellationToken cancellationToken = default)
         {
             _tasks.Add(item);
+            return Task.CompletedTask;
         }
 
-        public void Update(ToDoItem item)
+        public Task UpdateAsync(ToDoItem item, CancellationToken cancellationToken = default)
         {
             var existing = _tasks.FirstOrDefault(t => t.Id == item.Id);
             if (existing != null)
@@ -40,31 +41,33 @@ namespace Homework1.Infrastructure.DataAccess
                 _tasks.Remove(existing);
                 _tasks.Add(item);
             }
+            return Task.CompletedTask;
         }
 
-        public void Delete(Guid id)
+        public Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
         {
             var task = _tasks.FirstOrDefault(t => t.Id == id);
             if (task != null)
             {
                 _tasks.Remove(task);
             }
+            return Task.CompletedTask;
         }
 
-        public bool ExistsByName(Guid userId, string name)
+        public Task<bool> ExistsByNameAsync(Guid userId, string name, CancellationToken cancellationToken = default)
         {
-            return _tasks.Any(t => t.UserId == userId &&
-                                  t.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+            return Task.FromResult(_tasks.Any(t => t.UserId == userId &&
+                                  t.Name.Equals(name, StringComparison.OrdinalIgnoreCase)));
         }
 
-        public int CountActive(Guid userId)
+        public Task<int> CountActiveAsync(Guid userId, CancellationToken cancellationToken = default)
         {
-            return _tasks.Count(t => t.UserId == userId && t.State == ToDoItemState.Active);
+            return Task.FromResult(_tasks.Count(t => t.UserId == userId && t.State == ToDoItemState.Active));
         }
 
-        public IReadOnlyList<ToDoItem> Find(Guid userId, Func<ToDoItem, bool> predicate)
+        public Task<IReadOnlyList<ToDoItem>> FindAsync(Guid userId, Func<ToDoItem, bool> predicate, CancellationToken cancellationToken = default)
         {
-            return _tasks.Where(t => t.UserId == userId).Where(predicate).ToList();
+            return Task.FromResult((IReadOnlyList<ToDoItem>)_tasks.Where(t => t.UserId == userId).Where(predicate).ToList());
         }
     }
 }

@@ -19,22 +19,22 @@ namespace Homework1.Core.Services
             _userRepository = userRepository;
         }
 
-        public ToDoUser RegisterUser(long telegramUserId, string telegramUserName)
+        public async Task<ToDoUser> RegisterUserAsync(long telegramUserId, string telegramUserName, CancellationToken cancellationToken = default)
         {
-            var existingUser = _userRepository.GetUserByTelegramUserId(telegramUserId);
+            var existingUser = await _userRepository.GetUserByTelegramUserIdAsync(telegramUserId, cancellationToken);
             if (existingUser != null)
             {
                 return existingUser;
             }
 
             var user = new ToDoUser(telegramUserId, telegramUserName);
-            _userRepository.Add(user);
+            await _userRepository.AddAsync(user, cancellationToken);
             return user;
         }
 
-        public ToDoUser? GetUser(long telegramUserId)
+        public Task<ToDoUser?> GetUserAsync(long telegramUserId, CancellationToken cancellationToken = default)
         {
-            return _userRepository.GetUserByTelegramUserId(telegramUserId);
+            return _userRepository.GetUserByTelegramUserIdAsync(telegramUserId, cancellationToken);
         }
     }
 }
