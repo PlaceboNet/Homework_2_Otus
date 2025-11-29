@@ -5,8 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Homework1.Core.DataAccess;
 using Homework1.Core.Entities;
-using Otus.ToDoList.ConsoleBot;
-using Otus.ToDoList.ConsoleBot.Types;
+using Telegram.Bot;
 
 namespace Homework1.Core.Services
 {

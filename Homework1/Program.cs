@@ -3,11 +3,13 @@ using Homework1.Core.Services;
 using Homework1.Infrastructure.DataAccess;
 using Homework1.TelegramBot;
 using Microsoft.VisualBasic;
-using Otus.ToDoList.ConsoleBot;
-using Otus.ToDoList.ConsoleBot.Types;
 using System;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
+using Telegram.Bot;
+using Telegram.Bot.Polling;
+using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
 using static Homework1.Core.Entities.ToDoItem;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
@@ -15,7 +17,7 @@ namespace Homework1
 {
     internal class Program
     {
-        private static string iCanDo = "\nЯ могу выполнить несколько команд:" +
+        public static string iCanDo = "\nЯ могу выполнить несколько команд:" +
             "\n/start - программа просит ввести имя" +
             "\n/help - краткая справочная информация о том, как пользоваться программой" +
             "\n/info - предоставляет информацию о версии программы и дате её создания" +
@@ -27,10 +29,14 @@ namespace Homework1
             "\n/completetask - найти задачу по id" +
             "\n/report - показать статистику по задачам" +
             "\n/find - найти задачи по названию\n";
-        private static string info = "Версия 0.0.1\n27.08.2025";
+        public static string info = "Версия 0.0.1\n27.08.2025";
         public static string separation = "---------------------------";
         public static int MaxTask;
         public static int MaxLength;
+
+
+        private static ITelegramBotClient? _botClient;
+        private static CancellationTokenSource? _cts;
 
         static async Task Main(string[] args)
         {
@@ -64,21 +70,87 @@ namespace Homework1
             updateHandler.OnHandleUpdateStarted += OnHandleUpdateStarted;
             updateHandler.OnHandleUpdateCompleted += OnHandleUpdateCompleted;
 
-            // Создаем CancellationTokenSource
-            using var cts = new CancellationTokenSource();
-
             try
             {
-                // Запускаем бота с CancellationToken
-                var botClient = new ConsoleBotClient();
-                botClient.StartReceiving(updateHandler, cts.Token);
+                // Токен бота
+                var botToken = "TOKEN";
+
+                // Создаем клиент Telegram Bot
+                _botClient = new TelegramBotClient(botToken);
+                _cts = new CancellationTokenSource();
+
+                // Настраиваем команды бота
+                await SetBotCommands(_botClient);
+
+                // Настраиваем опции получения обновлений
+                var receiverOptions = new ReceiverOptions
+                {
+                    AllowedUpdates = [UpdateType.Message],
+                    DropPendingUpdates = true
+                };
+
+                // Запускаем получение обновлений
+                _botClient.StartReceiving(
+                    updateHandler: updateHandler,
+                    receiverOptions: receiverOptions,
+                    cancellationToken: _cts.Token
+                );
+
+                // Получаем информацию о боте
+                var me = await _botClient.GetMe();
+                Console.WriteLine($"{me.FirstName} запущен!");
+
+                // Ожидаем нажатия клавиши A для выхода
+                Console.WriteLine("Нажмите клавишу A для выхода");
+
+                while (!_cts.Token.IsCancellationRequested)
+                {
+                    var key = Console.ReadKey(intercept: true);
+                    if (key.Key == ConsoleKey.A)
+                    {
+                        Console.WriteLine("\nЗавершение работы...");
+                        _cts.Cancel();
+                        break;
+                    }
+                    else
+                    {
+                        // Выводим информацию о боте при нажатии любой другой клавиши
+                        Console.WriteLine($"\nБот: {me.FirstName} (@{me.Username})");
+                        Console.WriteLine("Нажмите клавишу A для выхода");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка: {ex.Message}");
             }
             finally
             {
                 // Отписываемся от событий
                 updateHandler.OnHandleUpdateStarted -= OnHandleUpdateStarted;
                 updateHandler.OnHandleUpdateCompleted -= OnHandleUpdateCompleted;
+                _cts?.Dispose();
             }
+        }
+
+        // Метод для настройки команд бота
+        private static async Task SetBotCommands(ITelegramBotClient botClient)
+        {
+            var commands = new[]
+            {
+            new BotCommand { Command = "start", Description = "Начать работу с ботом" },
+            new BotCommand { Command = "help", Description = "Показать справку по командам" },
+            new BotCommand { Command = "info", Description = "Информация о версии бота" },
+            new BotCommand { Command = "addtask", Description = "Добавить новую задачу" },
+            new BotCommand { Command = "showtasks", Description = "Показать активные задачи" },
+            new BotCommand { Command = "showalltasks", Description = "Показать все задачи" },
+            new BotCommand { Command = "removetask", Description = "Удалить задачу по номеру" },
+            new BotCommand { Command = "completetask", Description = "Завершить задачу по ID" },
+            new BotCommand { Command = "report", Description = "Статистика по задачам" },
+            new BotCommand { Command = "find", Description = "Найти задачи по названию" }
+        };
+
+            await botClient.SetMyCommands(commands);
         }
 
         // Обработчики событий

@@ -3,8 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Otus.ToDoList.ConsoleBot;
-using Otus.ToDoList.ConsoleBot.Types;
+using Telegram.Bot;
 
 namespace Homework1.Core.Entities
 {

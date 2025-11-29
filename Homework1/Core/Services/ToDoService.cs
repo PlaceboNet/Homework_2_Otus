@@ -1,8 +1,7 @@
 ﻿using Homework1.Core.DataAccess;
 using Homework1.Core.Entities;
 using Homework1.Core.Exceptions;
-using Otus.ToDoList.ConsoleBot;
-using Otus.ToDoList.ConsoleBot.Types;
+using Telegram.Bot;
 using System;
 using System.Collections.Generic;
 using System.Linq;
