@@ -9,9 +9,11 @@ namespace Homework1.Core.Entities
 {
     public class ToDoUser
     {
-        public Guid Id { get; }
-        public long TelegramUserId { get; }
-        public string TelegramUserName { get; }
+        public Guid Id { get; set; }
+        public long TelegramUserId { get; set; }
+        public string TelegramUserName { get; set; } = string.Empty;
+
+        public ToDoUser() { } // Конструктор для десериализации
 
         public ToDoUser(long telegramUserId, string telegramUserName)
         {

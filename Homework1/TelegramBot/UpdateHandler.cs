@@ -513,8 +513,7 @@ namespace Homework1.TelegramBot
             {
                 await botClient.SendMessage(
                     chat.Id,
-                    $"🔍 Задачи, начинающиеся на '{EscapeMarkdown(namePrefix)}', не найдены\\.",
-                    parseMode: ParseMode.MarkdownV2,
+                    $"🔍 Задачи, начинающиеся на '{namePrefix}', не найдены.",
                     replyMarkup: _mainKeyboard,
                     cancellationToken: cancellationToken);
                 return;
@@ -526,7 +525,7 @@ namespace Homework1.TelegramBot
                 var task = foundTasks[i];
                 string state = task.State == ToDoItemState.Active ? "🟢 Активна" : "✅ Завершена";
                 message += $"*{i + 1}\\.* {EscapeMarkdown(task.Name)} \n" +
-                          $"   {state}\n" +
+                          $"   {EscapeMarkdown(state)}\n" +
                           $"   🕐 {FormatDateForMarkdown(task.CreatedAt)}\n" +
                           $"   🆔 `{task.Id}`\n\n";
             }
@@ -558,12 +557,22 @@ namespace Homework1.TelegramBot
         // Метод для экранирования специальных символов Markdown
         private string EscapeMarkdown(string text)
         {
+            if (string.IsNullOrEmpty(text))
+                return text;
+
             var specialChars = new[] { '_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!', ':', '\\' };
-            foreach (var ch in specialChars)
+            var result = new StringBuilder();
+
+            foreach (char ch in text)
             {
-                text = text.Replace(ch.ToString(), $"\\{ch}");
+                if (Array.Exists(specialChars, c => c == ch))
+                {
+                    result.Append('\\');
+                }
+                result.Append(ch);
             }
-            return text;
+
+            return result.ToString();
         }
 
         private string FormatDateForMarkdown(DateTime date)

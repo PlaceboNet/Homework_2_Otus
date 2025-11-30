@@ -9,17 +9,22 @@ namespace Homework1.Core.Entities
 {
     public class ToDoItem
     {
-        public Guid Id { get; }
-        public Guid UserId { get; }  // Добавьте это свойство
-        public string Name { get; }
-        public DateTime CreatedAt { get; }
-        public ToDoItemState State { get; private set; }
+        public Guid Id { get; set; }
+        public Guid UserId { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public DateTime CreatedAt { get; set; }
+        public ToDoItemState State { get; set; }
+
+        public ToDoItem()
+        {
+            
+        }
 
         public ToDoItem(ToDoUser user, string name)
         {
             Id = Guid.NewGuid();
-            UserId = user.Id;  // Сохраняем ID пользователя
-            Name = name;
+            UserId = user?.Id ?? Guid.Empty;
+            Name = name ?? string.Empty;
             CreatedAt = DateTime.Now;
             State = ToDoItemState.Active;
         }
@@ -28,11 +33,5 @@ namespace Homework1.Core.Entities
         {
             State = ToDoItemState.Completed;
         }
-    }
-
-    public enum ToDoItemState
-    {
-        Active,
-        Completed
     }
 }

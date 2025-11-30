@@ -34,9 +34,20 @@ namespace Homework1
         public static int MaxTask;
         public static int MaxLength;
 
-
         private static ITelegramBotClient? _botClient;
         private static CancellationTokenSource? _cts;
+
+        // Обработчики событий
+        private static void OnHandleUpdateStarted(string message)
+        {
+            Console.WriteLine($"Началась обработка сообщения '{message}'");
+        }
+
+        private static void OnHandleUpdateCompleted(string message)
+        {
+            Console.WriteLine($"Закончилась обработка сообщения '{message}'");
+            Console.WriteLine(separation);
+        }
 
         static async Task Main(string[] args)
         {
@@ -54,9 +65,12 @@ namespace Homework1
                 throw new ArgumentException("Максимально допустимая длина задачи должно быть числом от 1 до 100.");
             }
 
-            // Создаем репозитории
-            var userRepository = new InMemoryUserRepository();
-            var toDoRepository = new InMemoryToDoRepository();
+            // Создаем файловые репозитории
+            var usersBasePath = Path.Combine(Directory.GetCurrentDirectory(), "Data", "Users");
+            var tasksBasePath = Path.Combine(Directory.GetCurrentDirectory(), "Data", "Tasks");
+
+            var userRepository = new FileUserRepository(usersBasePath);
+            var toDoRepository = new FileToDoRepository(tasksBasePath);
 
             // Создаем сервисы
             var userService = new UserService(userRepository);
@@ -72,8 +86,8 @@ namespace Homework1
 
             try
             {
-                // Токен бота
-                var botToken = "TOKEN";
+                // ВСТРОЕННЫЙ ТОКЕН
+                var botToken = "8497959131:AAHM51vUlbO2gdk4PxdlYsfpwXobLyLzEpU";
 
                 // Создаем клиент Telegram Bot
                 _botClient = new TelegramBotClient(botToken);
@@ -85,7 +99,7 @@ namespace Homework1
                 // Настраиваем опции получения обновлений
                 var receiverOptions = new ReceiverOptions
                 {
-                    AllowedUpdates = [UpdateType.Message],
+                    AllowedUpdates = new[] { UpdateType.Message },
                     DropPendingUpdates = true
                 };
 
@@ -97,7 +111,16 @@ namespace Homework1
                 );
 
                 // Получаем информацию о боте
-                var me = await _botClient.GetMe();
+                User me;
+                try
+                {
+                    me = await _botClient.GetMe();
+                }
+                catch
+                {
+                    me = _botClient.GetMe().GetAwaiter().GetResult();
+                }
+
                 Console.WriteLine($"{me.FirstName} запущен!");
 
                 // Ожидаем нажатия клавиши A для выхода
@@ -114,7 +137,6 @@ namespace Homework1
                     }
                     else
                     {
-                        // Выводим информацию о боте при нажатии любой другой клавиши
                         Console.WriteLine($"\nБот: {me.FirstName} (@{me.Username})");
                         Console.WriteLine("Нажмите клавишу A для выхода");
                     }
@@ -151,18 +173,6 @@ namespace Homework1
         };
 
             await botClient.SetMyCommands(commands);
-        }
-
-        // Обработчики событий
-        private static void OnHandleUpdateStarted(string message)
-        {
-            Console.WriteLine($"Началась обработка сообщения '{message}'");
-        }
-
-        private static void OnHandleUpdateCompleted(string message)
-        {
-            Console.WriteLine($"Закончилась обработка сообщения '{message}'");
-            Console.WriteLine(separation);
         }
     }
 }

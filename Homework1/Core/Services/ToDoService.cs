@@ -36,27 +36,49 @@ namespace Homework1.Core.Services
 
         public async Task<ToDoItem> AddAsync(ToDoUser user, string name, CancellationToken cancellationToken = default)
         {
+            Console.WriteLine($"=== ToDoService.AddAsync ===");
+            Console.WriteLine($"User: {user?.TelegramUserName}, Id: {user?.Id}");
+            Console.WriteLine($"Task name: {name}");
+
+            if (user == null)
+            {
+                Console.WriteLine("ОШИБКА: пользователь null!");
+                throw new ArgumentNullException(nameof(user));
+            }
+
             // Проверка максимального количества задач
             var userTasksCount = await _toDoRepository.CountActiveAsync(user.Id, cancellationToken);
+            Console.WriteLine($"Текущее количество задач пользователя: {userTasksCount}");
+            Console.WriteLine($"Максимальное количество: {_maxTaskCount}");
+
             if (userTasksCount >= _maxTaskCount)
             {
                 throw new TaskCountLimitException(_maxTaskCount);
             }
 
             // Проверка длины задачи
+            Console.WriteLine($"Длина задачи: {name.Length}, максимальная: {_maxTaskLength}");
             if (name.Length > _maxTaskLength)
             {
                 throw new TaskLengthLimitException(name.Length, _maxTaskLength);
             }
 
             // Проверка на дубликаты
-            if (await _toDoRepository.ExistsByNameAsync(user.Id, name, cancellationToken))
+            bool exists = await _toDoRepository.ExistsByNameAsync(user.Id, name, cancellationToken);
+            Console.WriteLine($"Задача с таким именем уже существует: {exists}");
+
+            if (exists)
             {
                 throw new DuplicateTaskException(name);
             }
 
+            Console.WriteLine("Создаем новую задачу...");
             var newTask = new ToDoItem(user, name);
+
+            Console.WriteLine("Вызываем репозиторий для сохранения...");
             await _toDoRepository.AddAsync(newTask, cancellationToken);
+            Console.WriteLine("Задача сохранена в репозитории");
+
             return newTask;
         }
 
