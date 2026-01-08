@@ -18,9 +18,19 @@ namespace Homework1.Core.Services
             _userRepository = userRepository;
         }
 
+        public async Task<ToDoUser?> GetUserAsync(long telegramUserId, CancellationToken cancellationToken = default)
+        {
+            return await _userRepository.GetUserByTelegramUserIdAsync(telegramUserId, cancellationToken);
+        }
+
+        public async Task<ToDoUser?> GetUserByTelegramUserIdAsync(long telegramUserId, CancellationToken cancellationToken = default)
+        {
+            return await _userRepository.GetUserByTelegramUserIdAsync(telegramUserId, cancellationToken);
+        }
+
         public async Task<ToDoUser> RegisterUserAsync(long telegramUserId, string telegramUserName, CancellationToken cancellationToken = default)
         {
-            var existingUser = await _userRepository.GetUserByTelegramUserIdAsync(telegramUserId, cancellationToken);
+            var existingUser = await GetUserByTelegramUserIdAsync(telegramUserId, cancellationToken);
             if (existingUser != null)
             {
                 return existingUser;
@@ -29,11 +39,6 @@ namespace Homework1.Core.Services
             var user = new ToDoUser(telegramUserId, telegramUserName);
             await _userRepository.AddAsync(user, cancellationToken);
             return user;
-        }
-
-        public Task<ToDoUser?> GetUserAsync(long telegramUserId, CancellationToken cancellationToken = default)
-        {
-            return _userRepository.GetUserByTelegramUserIdAsync(telegramUserId, cancellationToken);
         }
     }
 }

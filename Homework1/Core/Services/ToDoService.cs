@@ -13,101 +13,89 @@ namespace Homework1.Core.Services
 {
     public class ToDoService : IToDoService
     {
-        private readonly IToDoRepository _toDoRepository;
-        private readonly int _maxTaskCount;
+        private readonly IToDoRepository _repository;
+        private readonly int _maxTasks;
         private readonly int _maxTaskLength;
 
-        public ToDoService(IToDoRepository toDoRepository, int maxTaskCount, int maxTaskLength)
+        public ToDoService(IToDoRepository repository, int maxTasks, int maxTaskLength)
         {
-            _toDoRepository = toDoRepository;
-            _maxTaskCount = maxTaskCount;
+            _repository = repository;
+            _maxTasks = maxTasks;
             _maxTaskLength = maxTaskLength;
         }
 
-        public Task<IReadOnlyList<ToDoItem>> GetAllByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
+        public async Task<ToDoItem> AddAsync(ToDoUser user, string name, DateTime? deadline, CancellationToken cancellationToken)
         {
-            return _toDoRepository.GetAllByUserIdAsync(userId, cancellationToken);
-        }
+            var activeTasks = await _repository.GetActiveByUserIdAsync(user.Id, cancellationToken);
 
-        public Task<IReadOnlyList<ToDoItem>> GetActiveByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
-        {
-            return _toDoRepository.GetActiveByUserIdAsync(userId, cancellationToken);
-        }
-
-        public async Task<ToDoItem> AddAsync(ToDoUser user, string name, CancellationToken cancellationToken = default)
-        {
-            Console.WriteLine($"=== ToDoService.AddAsync ===");
-            Console.WriteLine($"User: {user?.TelegramUserName}, Id: {user?.Id}");
-            Console.WriteLine($"Task name: {name}");
-
-            if (user == null)
+            if (activeTasks.Count >= _maxTasks)
             {
-                Console.WriteLine("ОШИБКА: пользователь null!");
-                throw new ArgumentNullException(nameof(user));
+                throw new InvalidOperationException($"Превышено максимальное количество задач: {_maxTasks}");
             }
 
-            // Проверка максимального количества задач
-            var userTasksCount = await _toDoRepository.CountActiveAsync(user.Id, cancellationToken);
-            Console.WriteLine($"Текущее количество задач пользователя: {userTasksCount}");
-            Console.WriteLine($"Максимальное количество: {_maxTaskCount}");
-
-            if (userTasksCount >= _maxTaskCount)
-            {
-                throw new TaskCountLimitException(_maxTaskCount);
-            }
-
-            // Проверка длины задачи
-            Console.WriteLine($"Длина задачи: {name.Length}, максимальная: {_maxTaskLength}");
             if (name.Length > _maxTaskLength)
             {
-                throw new TaskLengthLimitException(name.Length, _maxTaskLength);
+                throw new InvalidOperationException($"Превышена максимальная длина задачи: {_maxTaskLength}");
             }
 
-            // Проверка на дубликаты
-            bool exists = await _toDoRepository.ExistsByNameAsync(user.Id, name, cancellationToken);
-            Console.WriteLine($"Задача с таким именем уже существует: {exists}");
-
+            var exists = await _repository.ExistsByNameAsync(user.Id, name, cancellationToken);
             if (exists)
             {
-                throw new DuplicateTaskException(name);
+                throw new InvalidOperationException($"Задача с именем '{name}' уже существует");
             }
 
-            Console.WriteLine("Создаем новую задачу...");
-            var newTask = new ToDoItem(user, name);
-
-            Console.WriteLine("Вызываем репозиторий для сохранения...");
-            await _toDoRepository.AddAsync(newTask, cancellationToken);
-            Console.WriteLine("Задача сохранена в репозитории");
-
-            return newTask;
+            var item = new ToDoItem(user, name, deadline);
+            await _repository.AddAsync(item, cancellationToken);
+            return item;
         }
 
-        public async Task MarkCompletedAsync(Guid id, CancellationToken cancellationToken = default)
+        public async Task<IReadOnlyList<ToDoItem>> GetAllByUserIdAsync(Guid userId, CancellationToken cancellationToken)
         {
-            var task = await _toDoRepository.GetAsync(id, cancellationToken);
+            return await _repository.GetAllByUserIdAsync(userId, cancellationToken);
+        }
+
+        public async Task<IReadOnlyList<ToDoItem>> GetActiveByUserIdAsync(Guid userId, CancellationToken cancellationToken)
+        {
+            return await _repository.GetActiveByUserIdAsync(userId, cancellationToken);
+        }
+
+        public async Task<ToDoItem?> GetByIdAsync(Guid taskId, CancellationToken cancellationToken)
+        {
+            return await _repository.GetAsync(taskId, cancellationToken);
+        }
+
+        public async Task MarkCompletedAsync(Guid taskId, CancellationToken cancellationToken)
+        {
+            var task = await _repository.GetAsync(taskId, cancellationToken);
             if (task == null)
             {
-                throw new ArgumentException($"Задача с ID {id} не найдена.");
-            }
-
-            if (task.State == ToDoItemState.Completed)
-            {
-                throw new InvalidOperationException("Задача уже завершена.");
+                throw new InvalidOperationException($"Задача с ID {taskId} не найдена");
             }
 
             task.Complete();
-            await _toDoRepository.UpdateAsync(task, cancellationToken);
+            await _repository.UpdateAsync(task, cancellationToken);
         }
 
-        public Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+        public async Task DeleteAsync(Guid taskId, CancellationToken cancellationToken)
         {
-            return _toDoRepository.DeleteAsync(id, cancellationToken);
+            await _repository.DeleteAsync(taskId, cancellationToken);
         }
 
-        public Task<IReadOnlyList<ToDoItem>> FindAsync(ToDoUser user, string namePrefix, CancellationToken cancellationToken = default)
+        public async Task<IReadOnlyList<ToDoItem>> FindAsync(ToDoUser user, string namePrefix, CancellationToken cancellationToken)
         {
-            return _toDoRepository.FindAsync(user.Id, task =>
-                task.Name.StartsWith(namePrefix, StringComparison.OrdinalIgnoreCase), cancellationToken);
+            return await _repository.FindAsync(user.Id, t =>
+                t.Name.StartsWith(namePrefix, StringComparison.OrdinalIgnoreCase),
+                cancellationToken);
+        }
+
+        public async Task<bool> ExistsByNameAsync(Guid userId, string name, CancellationToken cancellationToken)
+        {
+            return await _repository.ExistsByNameAsync(userId, name, cancellationToken);
+        }
+
+        public async Task<int> CountActiveAsync(Guid userId, CancellationToken cancellationToken)
+        {
+            return await _repository.CountActiveAsync(userId, cancellationToken);
         }
     }
 }

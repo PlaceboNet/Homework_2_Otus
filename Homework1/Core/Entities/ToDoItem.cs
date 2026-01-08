@@ -13,19 +13,18 @@ namespace Homework1.Core.Entities
         public Guid UserId { get; set; }
         public string Name { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
+        public DateTime? Deadline { get; set; }
         public ToDoItemState State { get; set; }
 
-        public ToDoItem()
-        {
-            
-        }
+        public ToDoItem() { }
 
-        public ToDoItem(ToDoUser user, string name)
+        public ToDoItem(ToDoUser user, string name, DateTime? deadline = null)
         {
             Id = Guid.NewGuid();
             UserId = user?.Id ?? Guid.Empty;
             Name = name ?? string.Empty;
             CreatedAt = DateTime.Now;
+            Deadline = deadline;
             State = ToDoItemState.Active;
         }
 

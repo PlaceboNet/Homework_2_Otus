@@ -1,6 +1,7 @@
 ﻿using Homework1.Core.DataAccess;
 using Homework1.Core.Services;
 using Homework1.Infrastructure.DataAccess;
+using Homework1.Scenario;
 using Homework1.TelegramBot;
 using Microsoft.VisualBasic;
 using System;
@@ -10,6 +11,7 @@ using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using TelegramBot.Scenarios;
 using static Homework1.Core.Entities.ToDoItem;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
@@ -28,7 +30,9 @@ namespace Homework1
             "\n/removetask - удалять задачи по номеру в списке" +
             "\n/completetask - найти задачу по id" +
             "\n/report - показать статистику по задачам" +
-            "\n/find - найти задачи по названию\n";
+            "\n/find - найти задачи по названию" +
+            "\n/cancel - отменить текущий сценарий";
+
         public static string info = "Версия 0.0.1\n27.08.2025";
         public static string separation = "---------------------------";
         public static int MaxTask;
@@ -40,24 +44,31 @@ namespace Homework1
         // Обработчики событий
         private static void OnHandleUpdateStarted(string message)
         {
-            Console.WriteLine($"Началась обработка сообщения '{message}'");
+            // Логируем только команды
+            if (message.StartsWith("/"))
+            {
+                Console.WriteLine($"Команда: {message}");
+            }
         }
 
         private static void OnHandleUpdateCompleted(string message)
         {
-            Console.WriteLine($"Закончилась обработка сообщения '{message}'");
-            Console.WriteLine(separation);
+            // Оставлено пустым
         }
 
         static async Task Main(string[] args)
         {
             Console.WriteLine($"Привет! {iCanDo}");
+
+            // Запрос максимального количества задач
             Console.WriteLine("Введите максимально допустимое количество задач");
             MaxTask = Convert.ToInt32(Console.ReadLine());
             if (MaxTask > 100 || MaxTask < 1)
             {
                 throw new ArgumentException("Максимальное количество задач должно быть числом от 1 до 100.");
             }
+
+            // Запрос максимальной длины задачи
             Console.WriteLine("Введите максимально допустимую длину задачи");
             MaxLength = Convert.ToInt32(Console.ReadLine());
             if (MaxLength > 100 || MaxLength < 1)
@@ -66,19 +77,27 @@ namespace Homework1
             }
 
             // Создаем файловые репозитории
-            var usersBasePath = Path.Combine(Directory.GetCurrentDirectory(), "Data", "Users");
-            var tasksBasePath = Path.Combine(Directory.GetCurrentDirectory(), "Data", "Tasks");
+            var currentDirectory = Directory.GetCurrentDirectory();
+            var usersBasePath = Path.Combine(currentDirectory, "Data", "Users");
+            var tasksBasePath = Path.Combine(currentDirectory, "Data", "Tasks");
 
             var userRepository = new FileUserRepository(usersBasePath);
             var toDoRepository = new FileToDoRepository(tasksBasePath);
+            var contextRepository = new InMemoryScenarioContextRepository();
 
             // Создаем сервисы
             var userService = new UserService(userRepository);
             var toDoService = new ToDoService(toDoRepository, MaxTask, MaxLength);
             var reportService = new ToDoReportService(toDoRepository);
 
+            // Создаем сценарии
+            var scenarios = new List<IScenario>
+        {
+            new AddTaskScenario(userService, toDoService)
+        };
+
             // Создаем обработчик
-            var updateHandler = new UpdateHandler(userService, toDoService, reportService);
+            var updateHandler = new UpdateHandler(userService, toDoService, reportService, contextRepository, scenarios);
 
             // Подписываемся на события
             updateHandler.OnHandleUpdateStarted += OnHandleUpdateStarted;
@@ -144,7 +163,8 @@ namespace Homework1
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Ошибка: {ex.Message}");
+                Console.WriteLine($"Ошибка при запуске бота: {ex.Message}");
+                Console.WriteLine($"StackTrace: {ex.StackTrace}");
             }
             finally
             {
@@ -169,10 +189,22 @@ namespace Homework1
             new BotCommand { Command = "removetask", Description = "Удалить задачу по номеру" },
             new BotCommand { Command = "completetask", Description = "Завершить задачу по ID" },
             new BotCommand { Command = "report", Description = "Статистика по задачам" },
-            new BotCommand { Command = "find", Description = "Найти задачи по названию" }
+            new BotCommand { Command = "find", Description = "Найти задачи по названию" },
+            new BotCommand { Command = "cancel", Description = "Отменить текущий сценарий" }
         };
 
-            await botClient.SetMyCommands(commands);
+            try
+            {
+                await botClient.SetMyCommands(commands);
+                Console.WriteLine("Команды бота успешно настроены");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка при настройке команд бота: {ex.Message}");
+            }
         }
     }
 }
+
+    // Делегат для событий
+    public delegate void MessageEventHandler(string message);

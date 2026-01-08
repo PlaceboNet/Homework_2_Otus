@@ -10,7 +10,8 @@ namespace Homework1.Core.Services
 {
     public interface IUserService
     {
-        Task<ToDoUser> RegisterUserAsync(long telegramUserId, string telegramUserName, CancellationToken cancellationToken = default);
         Task<ToDoUser?> GetUserAsync(long telegramUserId, CancellationToken cancellationToken = default);
+        Task<ToDoUser?> GetUserByTelegramUserIdAsync(long telegramUserId, CancellationToken cancellationToken = default);
+        Task<ToDoUser> RegisterUserAsync(long telegramUserId, string telegramUserName, CancellationToken cancellationToken = default);
     }
 }
