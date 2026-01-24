@@ -18,5 +18,6 @@ namespace Homework1.Core.DataAccess
         Task<bool> ExistsByNameAsync(Guid userId, string name, CancellationToken cancellationToken = default);
         Task<int> CountActiveAsync(Guid userId, CancellationToken cancellationToken = default);
         Task<IReadOnlyList<ToDoItem>> FindAsync(Guid userId, Func<ToDoItem, bool> predicate, CancellationToken cancellationToken = default);
+        Task<IReadOnlyList<ToDoItem>> GetByUserIdAndListAsync(Guid userId, Guid? listId, CancellationToken cancellationToken = default);
     }
 }

@@ -25,13 +25,11 @@ namespace Homework1
             "\n/info - предоставляет информацию о версии программы и дате её создания" +
             "\n/exit - выйти из программы" +
             "\n/addtask - добавить новую задачу в список" +
-            "\n/showtasks - отобразить список всех добавленных задач" +
-            "\n/showalltasks - выводить команды с любым State" +
+            "\n/show - отобразить задачи по спискам" +
             "\n/removetask - удалять задачи по номеру в списке" +
-            "\n/completetask - найти задачу по id" +
+            "\n/completetask - завершить задачу по ID" +
             "\n/report - показать статистику по задачам" +
-            "\n/find - найти задачи по названию" +
-            "\n/cancel - отменить текущий сценарий";
+            "\n/find - найти задачи по названию";
 
         public static string info = "Версия 0.0.1\n27.08.2025";
         public static string separation = "---------------------------";
@@ -80,24 +78,29 @@ namespace Homework1
             var currentDirectory = Directory.GetCurrentDirectory();
             var usersBasePath = Path.Combine(currentDirectory, "Data", "Users");
             var tasksBasePath = Path.Combine(currentDirectory, "Data", "Tasks");
+            var listsBasePath = Path.Combine(currentDirectory, "Data", "Lists");
 
             var userRepository = new FileUserRepository(usersBasePath);
             var toDoRepository = new FileToDoRepository(tasksBasePath);
+            var listRepository = new FileToDoListRepository(listsBasePath);
             var contextRepository = new InMemoryScenarioContextRepository();
 
             // Создаем сервисы
             var userService = new UserService(userRepository);
             var toDoService = new ToDoService(toDoRepository, MaxTask, MaxLength);
+            var listService = new ToDoListService(listRepository);
             var reportService = new ToDoReportService(toDoRepository);
 
             // Создаем сценарии
             var scenarios = new List<IScenario>
-        {
-            new AddTaskScenario(userService, toDoService)
-        };
+            {
+                new AddTaskScenario(userService, toDoService, listService),
+                new AddListScenario(userService, listService),
+                new DeleteListScenario(userService, listService, toDoService)
+            };
 
             // Создаем обработчик
-            var updateHandler = new UpdateHandler(userService, toDoService, reportService, contextRepository, scenarios);
+            var updateHandler = new UpdateHandler(userService, toDoService, reportService, listService, contextRepository, scenarios);
 
             // Подписываемся на события
             updateHandler.OnHandleUpdateStarted += OnHandleUpdateStarted;
@@ -106,7 +109,7 @@ namespace Homework1
             try
             {
                 // ВСТРОЕННЫЙ ТОКЕН
-                var botToken = "8497959131:AAHM51vUlbO2gdk4PxdlYsfpwXobLyLzEpU";
+                var botToken = "8497959131:AAEIWKX0K0qrrGcU5vEkGfrv4XbmMh5bCwI";
 
                 // Создаем клиент Telegram Bot
                 _botClient = new TelegramBotClient(botToken);
@@ -118,7 +121,7 @@ namespace Homework1
                 // Настраиваем опции получения обновлений
                 var receiverOptions = new ReceiverOptions
                 {
-                    AllowedUpdates = new[] { UpdateType.Message },
+                    AllowedUpdates = new[] { UpdateType.Message, UpdateType.CallbackQuery }, // ДОБАВИТЬ CallbackQuery!
                     DropPendingUpdates = true
                 };
 
@@ -180,18 +183,17 @@ namespace Homework1
         {
             var commands = new[]
             {
-            new BotCommand { Command = "start", Description = "Начать работу с ботом" },
-            new BotCommand { Command = "help", Description = "Показать справку по командам" },
-            new BotCommand { Command = "info", Description = "Информация о версии бота" },
-            new BotCommand { Command = "addtask", Description = "Добавить новую задачу" },
-            new BotCommand { Command = "showtasks", Description = "Показать активные задачи" },
-            new BotCommand { Command = "showalltasks", Description = "Показать все задачи" },
-            new BotCommand { Command = "removetask", Description = "Удалить задачу по номеру" },
-            new BotCommand { Command = "completetask", Description = "Завершить задачу по ID" },
-            new BotCommand { Command = "report", Description = "Статистика по задачам" },
-            new BotCommand { Command = "find", Description = "Найти задачи по названию" },
-            new BotCommand { Command = "cancel", Description = "Отменить текущий сценарий" }
-        };
+        new BotCommand { Command = "start", Description = "Начать работу с ботом" },
+        new BotCommand { Command = "help", Description = "Показать справку по командам" },
+        new BotCommand { Command = "info", Description = "Информация о версии бота" },
+        new BotCommand { Command = "addtask", Description = "Добавить новую задачу" },
+        new BotCommand { Command = "show", Description = "Показать задачи по спискам" },
+        new BotCommand { Command = "removetask", Description = "Удалить задачу по номеру" },
+        new BotCommand { Command = "completetask", Description = "Завершить задачу по ID" },
+        new BotCommand { Command = "report", Description = "Статистика по задачам" },
+        new BotCommand { Command = "find", Description = "Найти задачи по названию" },
+        new BotCommand { Command = "cancel", Description = "Отменить текущий сценарий" }
+    };
 
             try
             {

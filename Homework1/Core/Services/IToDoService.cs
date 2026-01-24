@@ -10,9 +10,10 @@ namespace Homework1.Core.Services
 {
     public interface IToDoService
     {
-        Task<ToDoItem> AddAsync(ToDoUser user, string name, DateTime? deadline, CancellationToken cancellationToken);
+        Task<ToDoItem> AddAsync(ToDoUser user, string name, DateTime? deadline, ToDoList? list, CancellationToken cancellationToken);
         Task<IReadOnlyList<ToDoItem>> GetAllByUserIdAsync(Guid userId, CancellationToken cancellationToken);
         Task<IReadOnlyList<ToDoItem>> GetActiveByUserIdAsync(Guid userId, CancellationToken cancellationToken);
+        Task<IReadOnlyList<ToDoItem>> GetByUserIdAndListAsync(Guid userId, Guid? listId, CancellationToken cancellationToken);
         Task<ToDoItem?> GetByIdAsync(Guid taskId, CancellationToken cancellationToken);
         Task MarkCompletedAsync(Guid taskId, CancellationToken cancellationToken);
         Task DeleteAsync(Guid taskId, CancellationToken cancellationToken);

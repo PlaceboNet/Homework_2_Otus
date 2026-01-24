@@ -1,5 +1,6 @@
 ﻿using Homework1.Scenario;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -20,46 +21,24 @@ namespace TelegramBot.Scenarios
 {
     public class InMemoryScenarioContextRepository : IScenarioContextRepository
     {
-        private readonly Dictionary<long, ScenarioContext> _contexts = new();
-        private readonly SemaphoreSlim _semaphore = new(1, 1);
+        private readonly ConcurrentDictionary<long, ScenarioContext> _contexts = new();
 
-        public async Task<ScenarioContext?> GetContext(long userId, CancellationToken ct)
+        public Task<ScenarioContext?> GetContext(long userId, CancellationToken ct)
         {
-            await _semaphore.WaitAsync(ct);
-            try
-            {
-                return _contexts.TryGetValue(userId, out var context) ? context : null;
-            }
-            finally
-            {
-                _semaphore.Release();
-            }
+            _contexts.TryGetValue(userId, out var context);
+            return Task.FromResult(context);
         }
 
-        public async Task SetContext(long userId, ScenarioContext context, CancellationToken ct)
+        public Task SetContext(long userId, ScenarioContext context, CancellationToken ct)
         {
-            await _semaphore.WaitAsync(ct);
-            try
-            {
-                _contexts[userId] = context;
-            }
-            finally
-            {
-                _semaphore.Release();
-            }
+            _contexts[userId] = context;
+            return Task.CompletedTask;
         }
 
-        public async Task ResetContext(long userId, CancellationToken ct)
+        public Task ResetContext(long userId, CancellationToken ct)
         {
-            await _semaphore.WaitAsync(ct);
-            try
-            {
-                _contexts.Remove(userId);
-            }
-            finally
-            {
-                _semaphore.Release();
-            }
+            _contexts.TryRemove(userId, out _);
+            return Task.CompletedTask;
         }
     }
 }

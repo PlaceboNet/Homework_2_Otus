@@ -67,6 +67,32 @@ namespace Homework1.Infrastructure.DataAccess
             return tasks;
         }
 
+        public async Task<IReadOnlyList<ToDoItem>> GetByUserIdAndListAsync(Guid userId, Guid? listId, CancellationToken cancellationToken = default)
+        {
+            await LoadIndexIfNeededAsync(cancellationToken);
+
+            var userFolder = GetUserFolderPath(userId);
+            if (!Directory.Exists(userFolder))
+                return new List<ToDoItem>();
+
+            var tasks = new List<ToDoItem>();
+            var files = Directory.GetFiles(userFolder, "*.json");
+
+            foreach (var file in files)
+            {
+                if (Guid.TryParse(Path.GetFileNameWithoutExtension(file), out var taskId))
+                {
+                    var task = await ReadTaskFromFileAsync(file, cancellationToken);
+                    if (task != null && task.UserId == userId && task.ListId == listId)
+                    {
+                        tasks.Add(task);
+                    }
+                }
+            }
+
+            return tasks;
+        }
+
         public async Task<IReadOnlyList<ToDoItem>> GetActiveByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
         {
             var allTasks = await GetAllByUserIdAsync(userId, cancellationToken);

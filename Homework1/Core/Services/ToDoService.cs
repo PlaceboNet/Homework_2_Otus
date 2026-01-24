@@ -24,78 +24,61 @@ namespace Homework1.Core.Services
             _maxTaskLength = maxTaskLength;
         }
 
-        public async Task<ToDoItem> AddAsync(ToDoUser user, string name, DateTime? deadline, CancellationToken cancellationToken)
+        // ВАЖНО: Этот метод должен возвращать Task<ToDoItem>
+        public async Task<ToDoItem> AddAsync(ToDoUser user, string name, DateTime? deadline, ToDoList? list, CancellationToken cancellationToken)
         {
             var activeTasks = await _repository.GetActiveByUserIdAsync(user.Id, cancellationToken);
 
             if (activeTasks.Count >= _maxTasks)
-            {
-                throw new InvalidOperationException($"Превышено максимальное количество задач: {_maxTasks}");
-            }
+                throw new TaskCountLimitException(_maxTasks);
 
             if (name.Length > _maxTaskLength)
-            {
-                throw new InvalidOperationException($"Превышена максимальная длина задачи: {_maxTaskLength}");
-            }
+                throw new TaskLengthLimitException(name.Length, _maxTaskLength);
 
             var exists = await _repository.ExistsByNameAsync(user.Id, name, cancellationToken);
             if (exists)
-            {
-                throw new InvalidOperationException($"Задача с именем '{name}' уже существует");
-            }
+                throw new DuplicateTaskException(name);
 
-            var item = new ToDoItem(user, name, deadline);
+            var item = new ToDoItem(user, name, deadline, list);
+
             await _repository.AddAsync(item, cancellationToken);
             return item;
         }
 
-        public async Task<IReadOnlyList<ToDoItem>> GetAllByUserIdAsync(Guid userId, CancellationToken cancellationToken)
-        {
-            return await _repository.GetAllByUserIdAsync(userId, cancellationToken);
-        }
+        public Task<IReadOnlyList<ToDoItem>> GetAllByUserIdAsync(Guid userId, CancellationToken cancellationToken)
+            => _repository.GetAllByUserIdAsync(userId, cancellationToken);
 
-        public async Task<IReadOnlyList<ToDoItem>> GetActiveByUserIdAsync(Guid userId, CancellationToken cancellationToken)
-        {
-            return await _repository.GetActiveByUserIdAsync(userId, cancellationToken);
-        }
+        public Task<IReadOnlyList<ToDoItem>> GetActiveByUserIdAsync(Guid userId, CancellationToken cancellationToken)
+            => _repository.GetActiveByUserIdAsync(userId, cancellationToken);
 
-        public async Task<ToDoItem?> GetByIdAsync(Guid taskId, CancellationToken cancellationToken)
-        {
-            return await _repository.GetAsync(taskId, cancellationToken);
-        }
+        public Task<IReadOnlyList<ToDoItem>> GetByUserIdAndListAsync(Guid userId, Guid? listId, CancellationToken cancellationToken)
+            => _repository.GetByUserIdAndListAsync(userId, listId, cancellationToken);
+
+        public Task<ToDoItem?> GetByIdAsync(Guid taskId, CancellationToken cancellationToken)
+            => _repository.GetAsync(taskId, cancellationToken);
 
         public async Task MarkCompletedAsync(Guid taskId, CancellationToken cancellationToken)
         {
-            var task = await _repository.GetAsync(taskId, cancellationToken);
-            if (task == null)
-            {
-                throw new InvalidOperationException($"Задача с ID {taskId} не найдена");
-            }
-
+            var task = await GetByIdAsync(taskId, cancellationToken);
+            if (task == null) throw new InvalidOperationException($"Задача с ID {taskId} не найдена");
             task.Complete();
             await _repository.UpdateAsync(task, cancellationToken);
         }
 
         public async Task DeleteAsync(Guid taskId, CancellationToken cancellationToken)
         {
+            var task = await GetByIdAsync(taskId, cancellationToken);
+            if (task == null) throw new InvalidOperationException($"Задача с ID {taskId} не найдена");
             await _repository.DeleteAsync(taskId, cancellationToken);
         }
 
         public async Task<IReadOnlyList<ToDoItem>> FindAsync(ToDoUser user, string namePrefix, CancellationToken cancellationToken)
-        {
-            return await _repository.FindAsync(user.Id, t =>
-                t.Name.StartsWith(namePrefix, StringComparison.OrdinalIgnoreCase),
-                cancellationToken);
-        }
+            => await _repository.FindAsync(user.Id, t => t.Name.StartsWith(namePrefix, StringComparison.OrdinalIgnoreCase), cancellationToken);
 
-        public async Task<bool> ExistsByNameAsync(Guid userId, string name, CancellationToken cancellationToken)
-        {
-            return await _repository.ExistsByNameAsync(userId, name, cancellationToken);
-        }
+        public Task<bool> ExistsByNameAsync(Guid userId, string name, CancellationToken cancellationToken)
+            => _repository.ExistsByNameAsync(userId, name, cancellationToken);
 
-        public async Task<int> CountActiveAsync(Guid userId, CancellationToken cancellationToken)
-        {
-            return await _repository.CountActiveAsync(userId, cancellationToken);
-        }
+        public Task<int> CountActiveAsync(Guid userId, CancellationToken cancellationToken)
+            => _repository.CountActiveAsync(userId, cancellationToken);
     }
 }

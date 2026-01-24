@@ -9,6 +9,8 @@ namespace Homework1.Scenario
     public enum ScenarioType
     {
         None,
-        AddTask
+        AddTask,
+        AddList,
+        DeleteList
     }
 }
