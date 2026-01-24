@@ -1,4 +1,4 @@
-﻿using Homework1.Scenario;
+﻿using Homework1.TelegramBot.Scenario;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Homework1.Scenario
+namespace Homework1.TelegramBot.Scenario
 {
     public interface IScenarioContextRepository
     {

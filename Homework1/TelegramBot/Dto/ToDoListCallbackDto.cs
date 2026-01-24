@@ -18,16 +18,13 @@ namespace Homework1.TelegramBot.Dto
                 Action = parts[0]
             };
 
-            if (parts.Length > 1)
+            if (parts.Length > 1 && Guid.TryParse(parts[1], out var listId))
             {
-                if (Guid.TryParse(parts[1], out var listId))
-                {
-                    dto.ToDoListId = listId;
-                }
-                else if (string.IsNullOrEmpty(parts[1]) || parts[1].ToLower() == "null")
-                {
-                    dto.ToDoListId = null;
-                }
+                dto.ToDoListId = listId;
+            }
+            else if (parts.Length > 1 && string.IsNullOrEmpty(parts[1]))
+            {
+                dto.ToDoListId = null;
             }
 
             return dto;
@@ -35,8 +32,7 @@ namespace Homework1.TelegramBot.Dto
 
         public override string ToString()
         {
-            var result = $"{Action}|{ToDoListId}";
-            return result;
+            return $"{Action}|{ToDoListId}";
         }
     }
 }

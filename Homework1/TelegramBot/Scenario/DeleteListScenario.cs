@@ -9,7 +9,7 @@ using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
 
-namespace Homework1.Scenario
+namespace Homework1.TelegramBot.Scenario
 {
     public class DeleteListScenario : IScenario
     {
@@ -68,7 +68,7 @@ namespace Homework1.Scenario
                 {
                 InlineKeyboardButton.WithCallbackData(
                     list.Name,
-                    new TelegramBot.Dto.ToDoListCallbackDto
+                    new Dto.ToDoListCallbackDto
                     {
                         Action = "deletelist",
                         ToDoListId = list.Id
@@ -99,7 +99,7 @@ namespace Homework1.Scenario
         private async Task<ScenarioResult> HandleApproveStep(ITelegramBotClient bot, ScenarioContext context, Message callbackQuery, CancellationToken ct)
         {
             // Парсим callback данные
-            var callbackData = TelegramBot.Dto.ToDoListCallbackDto.FromString(callbackQuery.Text);
+            var callbackData = Dto.ToDoListCallbackDto.FromString(callbackQuery.Text);
 
             if (!callbackData.ToDoListId.HasValue)
             {

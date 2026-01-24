@@ -20,5 +20,6 @@ namespace Homework1.Core.Services
         Task<IReadOnlyList<ToDoItem>> FindAsync(ToDoUser user, string namePrefix, CancellationToken cancellationToken);
         Task<bool> ExistsByNameAsync(Guid userId, string name, CancellationToken cancellationToken);
         Task<int> CountActiveAsync(Guid userId, CancellationToken cancellationToken);
+        Task<ToDoItem?> GetAsync(Guid toDoItemId, CancellationToken ct);
     }
 }

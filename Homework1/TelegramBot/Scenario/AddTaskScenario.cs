@@ -9,7 +9,7 @@ using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
 
-namespace Homework1.Scenario
+namespace Homework1.TelegramBot.Scenario
 {
     public class AddTaskScenario : IScenario
     {
@@ -101,7 +101,7 @@ namespace Homework1.Scenario
             {
         InlineKeyboardButton.WithCallbackData(
             "📌 Без списка",
-            new TelegramBot.Dto.ToDoListCallbackDto
+            new Dto.ToDoListCallbackDto
             {
                 Action = "selectlist",
                 ToDoListId = null
@@ -115,7 +115,7 @@ namespace Homework1.Scenario
                 {
             InlineKeyboardButton.WithCallbackData(
                 list.Name,
-                new TelegramBot.Dto.ToDoListCallbackDto
+                new Dto.ToDoListCallbackDto
                 {
                     Action = "selectlist",
                     ToDoListId = list.Id
@@ -139,11 +139,11 @@ namespace Homework1.Scenario
             try
             {
                 // Парсим callback данные
-                var callbackDto = TelegramBot.Dto.CallbackDto.FromString(callbackQuery.Text);
+                var callbackDto = Dto.CallbackDto.FromString(callbackQuery.Text);
                 if (callbackDto.Action == "selectlist")
                 {
                     // Парсим как ToDoListCallbackDto для получения ListId
-                    var listCallback = TelegramBot.Dto.ToDoListCallbackDto.FromString(callbackQuery.Text);
+                    var listCallback = Dto.ToDoListCallbackDto.FromString(callbackQuery.Text);
                     context.SetData("ListId", listCallback.ToDoListId);
                     context.CurrentStep = "Deadline";
 

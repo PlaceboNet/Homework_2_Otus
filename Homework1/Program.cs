@@ -1,8 +1,8 @@
 ﻿using Homework1.Core.DataAccess;
 using Homework1.Core.Services;
 using Homework1.Infrastructure.DataAccess;
-using Homework1.Scenario;
 using Homework1.TelegramBot;
+using Homework1.TelegramBot.Scenario;
 using Microsoft.VisualBasic;
 using System;
 using System.Linq;
@@ -23,11 +23,8 @@ namespace Homework1
             "\n/start - программа просит ввести имя" +
             "\n/help - краткая справочная информация о том, как пользоваться программой" +
             "\n/info - предоставляет информацию о версии программы и дате её создания" +
-            "\n/exit - выйти из программы" +
             "\n/addtask - добавить новую задачу в список" +
             "\n/show - отобразить задачи по спискам" +
-            "\n/removetask - удалять задачи по номеру в списке" +
-            "\n/completetask - завершить задачу по ID" +
             "\n/report - показать статистику по задачам" +
             "\n/find - найти задачи по названию";
 
@@ -96,7 +93,8 @@ namespace Homework1
             {
                 new AddTaskScenario(userService, toDoService, listService),
                 new AddListScenario(userService, listService),
-                new DeleteListScenario(userService, listService, toDoService)
+                new DeleteListScenario(userService, listService, toDoService),
+                new DeleteTaskScenario(toDoService)
             };
 
             // Создаем обработчик
@@ -188,8 +186,6 @@ namespace Homework1
         new BotCommand { Command = "info", Description = "Информация о версии бота" },
         new BotCommand { Command = "addtask", Description = "Добавить новую задачу" },
         new BotCommand { Command = "show", Description = "Показать задачи по спискам" },
-        new BotCommand { Command = "removetask", Description = "Удалить задачу по номеру" },
-        new BotCommand { Command = "completetask", Description = "Завершить задачу по ID" },
         new BotCommand { Command = "report", Description = "Статистика по задачам" },
         new BotCommand { Command = "find", Description = "Найти задачи по названию" },
         new BotCommand { Command = "cancel", Description = "Отменить текущий сценарий" }

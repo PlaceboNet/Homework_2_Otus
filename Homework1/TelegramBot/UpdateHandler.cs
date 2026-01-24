@@ -1,8 +1,10 @@
 ﻿using Homework1.Core.DataAccess;
 using Homework1.Core.Entities;
 using Homework1.Core.Services;
-using Homework1.Scenario;
+using Homework1.Helpers;
 using Homework1.TelegramBot;
+using Homework1.TelegramBot.Dto;
+using Homework1.TelegramBot.Scenario;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -176,12 +178,12 @@ namespace Homework1.TelegramBot
                     case "/find":
                         await HandleFindCommand(botClient, chat, user, argument, ct);
                         break;
-                    case "/completetask":
-                        await HandleCompleteTaskCommand(botClient, chat, argument, ct);
-                        break;
-                    case "/removetask":
-                        await HandleRemoveTaskCommand(botClient, chat, user, argument, ct);
-                        break;
+                    //case "/completetask":
+                    //    await HandleCompleteTaskCommand(botClient, chat, argument, ct);
+                    //    break;
+                    //case "/removetask":
+                    //    await HandleRemoveTaskCommand(botClient, chat, user, argument, ct);
+                    //    break;
                     case "/exit":
                         await botClient.SendMessage(
                             chat.Id,
@@ -212,74 +214,79 @@ namespace Homework1.TelegramBot
 
         private async Task OnCallbackQuery(ITelegramBotClient botClient, Update update, CallbackQuery callbackQuery, CancellationToken ct)
         {
-            try
+            var user = await _userService.GetUserAsync(callbackQuery.From.Id, ct);
+            if (user == null)
             {
-                var user = await _userService.GetUserAsync(callbackQuery.From.Id, ct);
-                if (user == null)
-                {
-                    await botClient.AnswerCallbackQuery(
-                        callbackQueryId: callbackQuery.Id,
-                        text: "Сначала зарегистрируйтесь с помощью /start",
-                        showAlert: true,
-                        cancellationToken: ct);
-                    return;
-                }
-
-                var callbackDataString = callbackQuery.Data;
-
-                // Проверяем активный сценарий ВСЕГДА, даже для selectlist
-                var context = await _contextRepository.GetContext(user.TelegramUserId, ct);
-
-                // Если есть активный сценарий, передаем callback ему
-                if (context != null && context.CurrentScenario != ScenarioType.None)
-                {
-                    // Передаем callback в сценарий
-                    var message = new Message
-                    {
-                        Chat = callbackQuery.Message?.Chat,
-                        From = callbackQuery.From,
-                        Text = callbackDataString
-                    };
-
-                    await ProcessScenario(botClient, context, message, ct);
-                    await botClient.AnswerCallbackQuery(callbackQueryId: callbackQuery.Id, cancellationToken: ct);
-                    return;
-                }
-
-                // Только если НЕТ активного сценария, обрабатываем команды
-                if (callbackDataString == "addlist")
-                {
-                    await HandleAddListCommand(botClient, callbackQuery.Message.Chat, user.TelegramUserId, ct);
-                }
-                else if (callbackDataString == "deletelist")
-                {
-                    await HandleDeleteListCommand(botClient, callbackQuery.Message.Chat, user.TelegramUserId, ct);
-                }
-                else if (callbackDataString.StartsWith("show"))
-                {
-                    await HandleShowCallback(botClient, callbackQuery, ct);
-                }
-                else if (callbackDataString.StartsWith("selectlist"))
-                {
-                    // Если пришел selectlist, но нет активного сценария - это ошибка
-                    await botClient.AnswerCallbackQuery(
-                        callbackQueryId: callbackQuery.Id,
-                        text: "Сначала запустите команду /addtask",
-                        showAlert: true,
-                        cancellationToken: ct);
-                }
-
-                await botClient.AnswerCallbackQuery(callbackQueryId: callbackQuery.Id, cancellationToken: ct);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Ошибка в OnCallbackQuery: {ex.Message}");
                 await botClient.AnswerCallbackQuery(
                     callbackQueryId: callbackQuery.Id,
-                    text: "Произошла ошибка",
+                    text: "Сначала зарегистрируйтесь с помощью /start",
                     showAlert: true,
                     cancellationToken: ct);
+                return;
             }
+
+            var callbackDataString = callbackQuery.Data;
+
+            // Проверяем активный сценарий
+            var context = await _contextRepository.GetContext(user.TelegramUserId, ct);
+            if (context != null && context.CurrentScenario != ScenarioType.None)
+            {
+                var message = new Message
+                {
+                    Chat = callbackQuery.Message?.Chat,
+                    From = callbackQuery.From,
+                    Text = callbackDataString
+                };
+
+                await ProcessScenario(botClient, context, message, ct);
+                await botClient.AnswerCallbackQuery(callbackQueryId: callbackQuery.Id, cancellationToken: ct);
+                return;
+            }
+
+            // Обработка callback вне сценариев
+            var callbackDto = TelegramBot.Dto.CallbackDto.FromString(callbackDataString);
+
+            switch (callbackDto.Action)
+            {
+                case "show":
+                case "show_completed":
+                    await HandleShowCallback(botClient, callbackQuery, ct);
+                    break;
+
+                case "showtask":
+                    await HandleShowTaskCallback(botClient, callbackQuery, ct);
+                    break;
+
+                case "completetask":
+                    await HandleCompleteTaskCallback(botClient, callbackQuery, ct);
+                    break;
+
+                case "deletetask":
+                    await HandleDeleteTaskCommand(botClient, callbackQuery.Message.Chat, user.TelegramUserId, callbackDataString, ct);
+                    break;
+
+                case "addlist":
+                    await HandleAddListCommand(botClient, callbackQuery.Message.Chat, user.TelegramUserId, ct);
+                    break;
+
+                case "deletelist":
+                    await HandleDeleteListCommand(botClient, callbackQuery.Message.Chat, user.TelegramUserId, ct);
+                    break;
+
+                default:
+                    // Пробуем распарсить как PagedListCallbackDto
+                    if (callbackDataString.Contains("|"))
+                    {
+                        var pagedDto = TelegramBot.Dto.PagedListCallbackDto.FromString(callbackDataString);
+                        if (pagedDto.Action == "show" || pagedDto.Action == "show_completed")
+                        {
+                            await HandleShowCallback(botClient, callbackQuery, ct);
+                        }
+                    }
+                    break;
+            }
+
+            await botClient.AnswerCallbackQuery(callbackQueryId: callbackQuery.Id, cancellationToken: ct);
         }
 
         private async Task HandleStartCommand(ITelegramBotClient botClient, Chat chat, long telegramUserId, string telegramUserName, CancellationToken cancellationToken)
@@ -443,11 +450,18 @@ namespace Homework1.TelegramBot
                 return;
             }
 
-            var callbackData = TelegramBot.Dto.ToDoListCallbackDto.FromString(callbackQuery.Data);
+            var callbackData = TelegramBot.Dto.PagedListCallbackDto.FromString(callbackQuery.Data);
             var tasks = await _toDoService.GetByUserIdAndListAsync(user.Id, callbackData.ToDoListId, ct);
-            var activeTasks = tasks.Where(t => t.State == ToDoItemState.Active).ToList();
 
-            // Получаем название списка
+            if (callbackData.Action == "show_completed")
+            {
+                tasks = tasks.Where(t => t.State == ToDoItemState.Completed).ToList();
+            }
+            else
+            {
+                tasks = tasks.Where(t => t.State == ToDoItemState.Active).ToList();
+            }
+
             var listName = "без списка";
             if (callbackData.ToDoListId.HasValue)
             {
@@ -455,23 +469,58 @@ namespace Homework1.TelegramBot
                 listName = list?.Name ?? "неизвестный список";
             }
 
-            if (activeTasks.Count == 0)
+            if (tasks.Count == 0)
             {
-                await botClient.SendMessage(
-                    callbackQuery.Message.Chat.Id,
-                    $"📭 В списке \"{listName}\" нет активных задач.",
-                    replyMarkup: _mainKeyboard,
+                var messageText = callbackData.Action == "show_completed"
+                    ? $"📭 В списке \"{listName}\" нет выполненных задач."
+                    : $"📭 В списке \"{listName}\" нет активных задач.";
+
+                await botClient.EditMessageText(
+                    chatId: callbackQuery.Message.Chat.Id,
+                    messageId: callbackQuery.Message.MessageId,
+                    text: messageText,
                     cancellationToken: ct);
                 return;
             }
 
-            var message = FormatTasksList(activeTasks, $"📋 *Задачи из списка \"{EscapeMarkdown(listName)}\":*", true);
+            // Создаем кнопки для задач
+            var taskButtons = new List<KeyValuePair<string, string>>();
 
-            await botClient.SendMessage(
-                callbackQuery.Message.Chat.Id,
-                message,
+            for (int i = 0; i < tasks.Count; i++)
+            {
+                var task = tasks[i];
+                var buttonText = $"{(i + 1)}. {task.Name}";
+                var callback = new ToDoItemCallbackDto
+                {
+                    Action = "showtask",
+                    ToDoItemId = task.Id
+                }.ToString();
+
+                taskButtons.Add(new KeyValuePair<string, string>(buttonText, callback));
+            }
+
+            // Добавляем кнопку для просмотра выполненных/активных задач
+            var toggleButton = callbackData.Action == "show"
+                ? new KeyValuePair<string, string>("☑️ Посмотреть выполненные",
+                    new PagedListCallbackDto { Action = "show_completed", ToDoListId = callbackData.ToDoListId, Page = 0 }.ToString())
+                : new KeyValuePair<string, string>("🟢 Посмотреть активные",
+                    new PagedListCallbackDto { Action = "show", ToDoListId = callbackData.ToDoListId, Page = 0 }.ToString());
+
+            taskButtons.Add(toggleButton);
+
+            // Используем пагинацию
+            var keyboard = BuildPagedButtons(taskButtons, callbackData);
+
+            var title = callbackData.Action == "show_completed"
+                ? $"✅ *Выполненные задачи в списке \"{EscapeMarkdown(listName)}\":*"
+                : $"📋 *Активные задачи в списке \"{EscapeMarkdown(listName)}\":*";
+
+            await botClient.EditMessageText(
+                chatId: callbackQuery.Message.Chat.Id,
+                messageId: callbackQuery.Message.MessageId,
+                text: title,
                 parseMode: ParseMode.MarkdownV2,
-                replyMarkup: _mainKeyboard,
+                replyMarkup: keyboard,
                 cancellationToken: ct);
         }
 
@@ -851,6 +900,194 @@ namespace Homework1.TelegramBot
         public Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, HandleErrorSource source, CancellationToken cancellationToken)
         {
             return Task.CompletedTask;
+        }
+        private readonly int _pageSize = 5;
+
+        private InlineKeyboardMarkup BuildPagedButtons(
+            IReadOnlyList<KeyValuePair<string, string>> callbackData,
+            PagedListCallbackDto listDto)
+        {
+            var totalItems = callbackData.Count;
+            var totalPages = (int)Math.Ceiling(totalItems / (double)_pageSize);
+
+            // Получаем кнопки для текущей страницы
+            var pageButtons = callbackData
+                .GetBatchByNumber(_pageSize, listDto.Page)
+                .Select(kvp => new[]
+                {
+            InlineKeyboardButton.WithCallbackData(kvp.Key, kvp.Value)
+                })
+                .ToList();
+
+            // Добавляем кнопки навигации
+            var navigationButtons = new List<InlineKeyboardButton[]>();
+
+            if (listDto.Page > 0)
+            {
+                navigationButtons.Add(new[]
+                {
+            InlineKeyboardButton.WithCallbackData("⬅️ Назад",
+                new PagedListCallbackDto
+                {
+                    Action = listDto.Action,
+                    ToDoListId = listDto.ToDoListId,
+                    Page = listDto.Page - 1
+                }.ToString())
+        });
+            }
+
+            if (listDto.Page < totalPages - 1)
+            {
+                var buttonText = navigationButtons.Count > 0 ? "➡️ Вперед" : "➡️";
+                navigationButtons.Add(new[]
+                {
+            InlineKeyboardButton.WithCallbackData(buttonText,
+                new PagedListCallbackDto
+                {
+                    Action = listDto.Action,
+                    ToDoListId = listDto.ToDoListId,
+                    Page = listDto.Page + 1
+                }.ToString())
+        });
+            }
+
+            // Объединяем все кнопки
+            var allButtons = pageButtons.Concat(navigationButtons).ToList();
+
+            return new InlineKeyboardMarkup(allButtons);
+        }
+        private async Task HandleShowTaskCallback(ITelegramBotClient botClient, CallbackQuery callbackQuery, CancellationToken ct)
+        {
+            var callbackData = TelegramBot.Dto.ToDoItemCallbackDto.FromString(callbackQuery.Data);
+            var task = await _toDoService.GetAsync(callbackData.ToDoItemId, ct);
+
+            if (task == null)
+            {
+                await botClient.EditMessageText(
+                    chatId: callbackQuery.Message.Chat.Id,
+                    messageId: callbackQuery.Message.MessageId,
+                    text: "Задача не найдена",
+                    cancellationToken: ct);
+                return;
+            }
+
+            var listName = "без списка";
+            if (task.ListId.HasValue)
+            {
+                var list = await _listService.Get(task.ListId.Value, ct);
+                listName = list?.Name ?? "неизвестный список";
+            }
+
+            var message = $"📋 *Задача:* {EscapeMarkdown(task.Name)}\n" +
+                          $"📁 *Список:* {EscapeMarkdown(listName)}\n" +
+                          $"🕐 *Создана:* {FormatDateForMarkdown(task.CreatedAt)}\n" +
+                          $"📅 *Дедлайн:* {(task.Deadline.HasValue ? FormatDateForMarkdown(task.Deadline.Value) : "нет")}\n" +
+                          $"📊 *Статус:* {(task.State == ToDoItemState.Active ? "🟢 Активна" : "✅ Выполнена")}\n" +
+                          $"🆔 *ID:* `{task.Id}`";
+
+            // Создаем кнопки действий
+            var buttons = new List<InlineKeyboardButton[]>();
+
+            if (task.State == ToDoItemState.Active)
+            {
+                buttons.Add(new[]
+                {
+            InlineKeyboardButton.WithCallbackData("✅ Выполнить",
+                new ToDoItemCallbackDto { Action = "completetask", ToDoItemId = task.Id }.ToString()),
+            InlineKeyboardButton.WithCallbackData("❌ Удалить",
+                new ToDoItemCallbackDto { Action = "deletetask", ToDoItemId = task.Id }.ToString())
+        });
+            }
+            else
+            {
+                buttons.Add(new[]
+                {
+            InlineKeyboardButton.WithCallbackData("❌ Удалить",
+                new ToDoItemCallbackDto { Action = "deletetask", ToDoItemId = task.Id }.ToString())
+        });
+            }
+
+            // Кнопка назад
+            var listDto = new PagedListCallbackDto
+            {
+                Action = "show",
+                ToDoListId = task.ListId,
+                Page = 0
+            };
+
+            buttons.Add(new[]
+            {
+        InlineKeyboardButton.WithCallbackData("⬅️ Назад к списку", listDto.ToString())
+    });
+
+            var keyboard = new InlineKeyboardMarkup(buttons);
+
+            await botClient.EditMessageText(
+                chatId: callbackQuery.Message.Chat.Id,
+                messageId: callbackQuery.Message.MessageId,
+                text: message,
+                parseMode: ParseMode.MarkdownV2,
+                replyMarkup: keyboard,
+                cancellationToken: ct);
+        }
+        private async Task HandleCompleteTaskCallback(ITelegramBotClient botClient, CallbackQuery callbackQuery, CancellationToken ct)
+        {
+            var callbackData = TelegramBot.Dto.ToDoItemCallbackDto.FromString(callbackQuery.Data);
+
+            try
+            {
+                await _toDoService.MarkCompletedAsync(callbackData.ToDoItemId, ct);
+
+                // Обновляем сообщение
+                await botClient.EditMessageText(
+                    chatId: callbackQuery.Message.Chat.Id,
+                    messageId: callbackQuery.Message.MessageId,
+                    text: $"✅ Задача выполнена!",
+                    cancellationToken: ct);
+
+                // Через секунду возвращаемся к списку задач
+                await Task.Delay(1000);
+
+                // Получаем задачу чтобы узнать ListId
+                var task = await _toDoService.GetAsync(callbackData.ToDoItemId, ct);
+                if (task != null)
+                {
+                    var listDto = new PagedListCallbackDto
+                    {
+                        Action = "show",
+                        ToDoListId = task.ListId,
+                        Page = 0
+                    };
+
+                    await HandleShowCallback(botClient, callbackQuery, ct);
+                }
+            }
+            catch (Exception ex)
+            {
+                await botClient.AnswerCallbackQuery(
+                    callbackQueryId: callbackQuery.Id,
+                    text: $"Ошибка: {ex.Message}",
+                    showAlert: true,
+                    cancellationToken: ct);
+            }
+
+        }
+        private async Task HandleDeleteTaskCommand(ITelegramBotClient botClient, Chat chat, long telegramUserId, string callbackData, CancellationToken cancellationToken)
+        {
+            var user = await _userService.GetUserAsync(telegramUserId, cancellationToken);
+            if (user == null) return;
+
+            var context = new ScenarioContext(ScenarioType.DeleteTask);
+            await _contextRepository.SetContext(telegramUserId, context, cancellationToken);
+
+            var message = new Message
+            {
+                Chat = chat,
+                From = new User { Id = telegramUserId },
+                Text = callbackData
+            };
+
+            await ProcessScenario(botClient, context, message, cancellationToken);
         }
     }
 }

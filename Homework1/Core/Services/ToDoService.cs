@@ -44,6 +44,10 @@ namespace Homework1.Core.Services
             await _repository.AddAsync(item, cancellationToken);
             return item;
         }
+        public async Task<ToDoItem?> GetAsync(Guid toDoItemId, CancellationToken ct)
+        {
+            return await _repository.GetAsync(toDoItemId, ct);
+        }
 
         public Task<IReadOnlyList<ToDoItem>> GetAllByUserIdAsync(Guid userId, CancellationToken cancellationToken)
             => _repository.GetAllByUserIdAsync(userId, cancellationToken);
