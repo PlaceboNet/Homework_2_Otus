@@ -8,7 +8,7 @@ namespace Homework1.Core.Entities
 {
     public enum ToDoItemState
     {
-        Active,
-        Completed
+        Active = 0,
+        Completed = 1
     }
 }

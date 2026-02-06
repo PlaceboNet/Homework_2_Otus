@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Homework1.Core.Entities;
 
 namespace Homework1.Core.DataAccess
 {

@@ -36,7 +36,12 @@ namespace Homework1.Core.Services
                 return existingUser;
             }
 
-            var user = new ToDoUser(telegramUserId, telegramUserName);
+            var user = new ToDoUser
+            {
+                Id = Guid.NewGuid(),
+                TelegramUserId = telegramUserId,
+                TelegramUserName = telegramUserName
+            };
             await _userRepository.AddAsync(user, cancellationToken);
             return user;
         }

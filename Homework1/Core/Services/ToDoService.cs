@@ -39,7 +39,16 @@ namespace Homework1.Core.Services
             if (exists)
                 throw new DuplicateTaskException(name);
 
-            var item = new ToDoItem(user, name, deadline, list);
+            var item = new ToDoItem
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                ListId = list?.Id,
+                Name = name,
+                CreatedAt = DateTime.Now,
+                Deadline = deadline,
+                State = ToDoItemState.Active
+            };
 
             await _repository.AddAsync(item, cancellationToken);
             return item;
@@ -65,7 +74,7 @@ namespace Homework1.Core.Services
         {
             var task = await GetByIdAsync(taskId, cancellationToken);
             if (task == null) throw new InvalidOperationException($"Задача с ID {taskId} не найдена");
-            task.Complete();
+            task.State = ToDoItemState.Completed;
             await _repository.UpdateAsync(task, cancellationToken);
         }
 

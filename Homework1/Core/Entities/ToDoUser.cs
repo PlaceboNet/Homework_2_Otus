@@ -12,14 +12,7 @@ namespace Homework1.Core.Entities
         public Guid Id { get; set; }
         public long TelegramUserId { get; set; }
         public string TelegramUserName { get; set; } = string.Empty;
-
-        public ToDoUser() { } // Конструктор для десериализации
-
-        public ToDoUser(long telegramUserId, string telegramUserName)
-        {
-            Id = Guid.NewGuid();
-            TelegramUserId = telegramUserId;
-            TelegramUserName = telegramUserName;
-        }
+        public List<ToDoList>? Lists { get; set; }
+        public List<ToDoItem>? Tasks { get; set; }
     }
 }

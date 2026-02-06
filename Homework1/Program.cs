@@ -1,19 +1,19 @@
 ﻿using Homework1.Core.DataAccess;
 using Homework1.Core.Services;
 using Homework1.Infrastructure.DataAccess;
+using Homework1.Infrastructure.DataAccess.Repositories;
 using Homework1.TelegramBot;
 using Homework1.TelegramBot.Scenario;
 using Microsoft.VisualBasic;
 using System;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
+using Homework1.Core.Entities;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using TelegramBot.Scenarios;
-using static Homework1.Core.Entities.ToDoItem;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Homework1
 {
@@ -71,15 +71,23 @@ namespace Homework1
                 throw new ArgumentException("Максимально допустимая длина задачи должно быть числом от 1 до 100.");
             }
 
+            // Строка подключения к PostgreSQL
+            var connectionString = "Host=localhost;Port=5432;Database=ToDoList;Username=postgres;Password=8888;";
+
+            // Создаем фабрику контекста данных
+            var contextFactory = new DataContextFactory(connectionString);
+            contextFactory.EnsureCreated();
+
             // Создаем файловые репозитории
             var currentDirectory = Directory.GetCurrentDirectory();
             var usersBasePath = Path.Combine(currentDirectory, "Data", "Users");
             var tasksBasePath = Path.Combine(currentDirectory, "Data", "Tasks");
             var listsBasePath = Path.Combine(currentDirectory, "Data", "Lists");
 
-            var userRepository = new FileUserRepository(usersBasePath);
-            var toDoRepository = new FileToDoRepository(tasksBasePath);
-            var listRepository = new FileToDoListRepository(listsBasePath);
+            // Создаем SQL репозитории
+            var userRepository = new SqlUserRepository(contextFactory);
+            var toDoRepository = new SqlToDoRepository(contextFactory);
+            var listRepository = new SqlToDoListRepository(contextFactory);
             var contextRepository = new InMemoryScenarioContextRepository();
 
             // Создаем сервисы
@@ -107,7 +115,7 @@ namespace Homework1
             try
             {
                 // ВСТРОЕННЫЙ ТОКЕН
-                var botToken = "8497959131:AAEIWKX0K0qrrGcU5vEkGfrv4XbmMh5bCwI";
+                var botToken = "8497959131:AAEmacvZvvg-7LKyw4-gOftldYnsPchHeKU";
 
                 // Создаем клиент Telegram Bot
                 _botClient = new TelegramBotClient(botToken);
@@ -143,13 +151,13 @@ namespace Homework1
 
                 Console.WriteLine($"{me.FirstName} запущен!");
 
-                // Ожидаем нажатия клавиши A для выхода
-                Console.WriteLine("Нажмите клавишу A для выхода");
+                // Ожидаем ввод exit для выхода
+                Console.WriteLine("Введите 'exit' для выхода");
 
                 while (!_cts.Token.IsCancellationRequested)
                 {
-                    var key = Console.ReadKey(intercept: true);
-                    if (key.Key == ConsoleKey.A)
+                    var input = Console.ReadLine();
+                    if (input?.ToLower() == "exit")
                     {
                         Console.WriteLine("\nЗавершение работы...");
                         _cts.Cancel();
@@ -158,7 +166,7 @@ namespace Homework1
                     else
                     {
                         Console.WriteLine($"\nБот: {me.FirstName} (@{me.Username})");
-                        Console.WriteLine("Нажмите клавишу A для выхода");
+                        Console.WriteLine("Введите 'exit' для выхода");
                     }
                 }
             }

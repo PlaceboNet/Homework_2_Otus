@@ -45,7 +45,13 @@ namespace Homework1.TelegramBot.Scenario
                 throw new InvalidOperationException($"Список с именем '{name}' уже существует");
             }
 
-            var list = new ToDoList(user, name);
+            var list = new ToDoList
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                Name = name,
+                CreatedAt = DateTime.Now
+            };
             await _repository.Add(list, ct);
             return list;
         }
