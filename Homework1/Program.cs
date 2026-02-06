@@ -151,23 +151,22 @@ namespace Homework1
 
                 Console.WriteLine($"{me.FirstName} запущен!");
 
-                // Ожидаем ввод exit для выхода
-                Console.WriteLine("Введите 'exit' для выхода");
+                // Ожидаем нажатие 'A' для выхода
+                Console.WriteLine("Нажмите 'A' для выхода");
 
                 while (!_cts.Token.IsCancellationRequested)
                 {
-                    var input = Console.ReadLine();
-                    if (input?.ToLower() == "exit")
+                    if (Console.KeyAvailable)
                     {
-                        Console.WriteLine("\nЗавершение работы...");
-                        _cts.Cancel();
-                        break;
+                        var key = Console.ReadKey(true);
+                        if (key.Key == ConsoleKey.A)
+                        {
+                            Console.WriteLine("\nЗавершение работы...");
+                            _cts.Cancel();
+                            break;
+                        }
                     }
-                    else
-                    {
-                        Console.WriteLine($"\nБот: {me.FirstName} (@{me.Username})");
-                        Console.WriteLine("Введите 'exit' для выхода");
-                    }
+                    await Task.Delay(100);
                 }
             }
             catch (Exception ex)
