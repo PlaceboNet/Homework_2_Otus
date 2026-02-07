@@ -105,8 +105,18 @@ namespace Homework1
                 new DeleteTaskScenario(toDoService)
             };
 
+            // ВСТРОЕННЫЙ ТОКЕН
+            var botToken = "8497959131:AAEmacvZvvg-7LKyw4-gOftldYnsPchHeKU";
+
             // Создаем обработчик
             var updateHandler = new UpdateHandler(userService, toDoService, reportService, listService, contextRepository, scenarios);
+
+            // Инициализируем фоновые задачи
+            var backgroundTaskRunner = new Homework1.BackgroundTasks.BackgroundTaskRunner();
+            backgroundTaskRunner.AddTask(new Homework1.BackgroundTasks.ResetScenarioBackgroundTask(
+                TimeSpan.FromHours(1),
+                contextRepository,
+                new TelegramBotClient(botToken)));
 
             // Подписываемся на события
             updateHandler.OnHandleUpdateStarted += OnHandleUpdateStarted;
@@ -114,9 +124,6 @@ namespace Homework1
 
             try
             {
-                // ВСТРОЕННЫЙ ТОКЕН
-                var botToken = "8497959131:AAEmacvZvvg-7LKyw4-gOftldYnsPchHeKU";
-
                 // Создаем клиент Telegram Bot
                 _botClient = new TelegramBotClient(botToken);
                 _cts = new CancellationTokenSource();
@@ -130,6 +137,9 @@ namespace Homework1
                     AllowedUpdates = new[] { UpdateType.Message, UpdateType.CallbackQuery }, // ДОБАВИТЬ CallbackQuery!
                     DropPendingUpdates = true
                 };
+
+                // Запускаем фоновые задачи
+                backgroundTaskRunner.StartTasks(_cts.Token);
 
                 // Запускаем получение обновлений
                 _botClient.StartReceiving(
@@ -176,6 +186,14 @@ namespace Homework1
             }
             finally
             {
+                // Останавливаем фоновые задачи
+                if (backgroundTaskRunner != null)
+                {
+                    using var stopCts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                    await backgroundTaskRunner.StopTasks(stopCts.Token);
+                    backgroundTaskRunner.Dispose();
+                }
+
                 // Отписываемся от событий
                 updateHandler.OnHandleUpdateStarted -= OnHandleUpdateStarted;
                 updateHandler.OnHandleUpdateCompleted -= OnHandleUpdateCompleted;

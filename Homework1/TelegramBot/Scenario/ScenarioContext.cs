@@ -8,13 +8,17 @@ namespace Homework1.TelegramBot.Scenario
 {
     public class ScenarioContext
     {
+        public long UserId { get; }
+        public DateTime CreatedAt { get; }
         public ScenarioType CurrentScenario { get; set; }
         public string? CurrentStep { get; set; }
         public Dictionary<string, object> Data { get; } = new();
 
-        public ScenarioContext(ScenarioType scenario)
+        public ScenarioContext(long userId, ScenarioType scenario)
         {
+            UserId = userId;
             CurrentScenario = scenario;
+            CreatedAt = DateTime.UtcNow;
         }
 
         public T GetData<T>(string key)

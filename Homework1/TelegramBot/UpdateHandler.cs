@@ -358,7 +358,7 @@ namespace Homework1.TelegramBot
             }
 
             // Создаем контекст сценария
-            var context = new ScenarioContext(ScenarioType.AddTask);
+            var context = new ScenarioContext(telegramUserId, ScenarioType.AddTask);
             await _contextRepository.SetContext(telegramUserId, context, cancellationToken);
 
             await botClient.SendMessage(
@@ -537,7 +537,7 @@ namespace Homework1.TelegramBot
                 return;
             }
 
-            var context = new ScenarioContext(ScenarioType.AddList);
+            var context = new ScenarioContext(telegramUserId, ScenarioType.AddList);
             await _contextRepository.SetContext(telegramUserId, context, cancellationToken);
 
             await botClient.SendMessage(
@@ -570,7 +570,7 @@ namespace Homework1.TelegramBot
                 return;
             }
 
-            var context = new ScenarioContext(ScenarioType.DeleteList);
+            var context = new ScenarioContext(telegramUserId, ScenarioType.DeleteList);
             await _contextRepository.SetContext(telegramUserId, context, cancellationToken);
 
             await botClient.SendMessage(
@@ -1077,7 +1077,7 @@ namespace Homework1.TelegramBot
             var user = await _userService.GetUserAsync(telegramUserId, cancellationToken);
             if (user == null) return;
 
-            var context = new ScenarioContext(ScenarioType.DeleteTask);
+            var context = new ScenarioContext(telegramUserId, ScenarioType.DeleteTask);
             await _contextRepository.SetContext(telegramUserId, context, cancellationToken);
 
             var message = new Message

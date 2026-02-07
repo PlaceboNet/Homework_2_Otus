@@ -13,6 +13,7 @@ namespace Homework1.TelegramBot.Scenario
         Task<ScenarioContext?> GetContext(long userId, CancellationToken ct);
         Task SetContext(long userId, ScenarioContext context, CancellationToken ct);
         Task ResetContext(long userId, CancellationToken ct);
+        Task<IReadOnlyList<ScenarioContext>> GetContexts(CancellationToken ct);
     }
 }
 
@@ -39,6 +40,12 @@ namespace TelegramBot.Scenarios
         {
             _contexts.TryRemove(userId, out _);
             return Task.CompletedTask;
+        }
+
+        public Task<IReadOnlyList<ScenarioContext>> GetContexts(CancellationToken ct)
+        {
+            var list = _contexts.Values.ToList();
+            return Task.FromResult<IReadOnlyList<ScenarioContext>>(list);
         }
     }
 }
