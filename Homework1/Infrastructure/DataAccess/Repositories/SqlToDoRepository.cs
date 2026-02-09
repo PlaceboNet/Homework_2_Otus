@@ -138,5 +138,21 @@ namespace Homework1.Infrastructure.DataAccess.Repositories
             var items = await query.ToListAsync(cancellationToken);
             return items.Select(ModelMapper.MapFromModel).ToList().AsReadOnly();
         }
+        
+        public async Task<IReadOnlyList<ToDoItem>> GetActiveWithDeadline(Guid userId, DateTime from, DateTime to, CancellationToken ct)
+        {
+            using var dbContext = _factory.CreateDataContext();
+
+            var items = await dbContext.ToDoItems
+                .LoadWith(i => i.User)
+                .LoadWith(i => i.List)
+                .Where(i => i.UserId == userId && 
+                          i.State == (int)ToDoItemState.Active && 
+                          i.Deadline >= from && 
+                          i.Deadline < to)
+                .ToListAsync(ct);
+
+            return items.Select(ModelMapper.MapFromModel).ToList().AsReadOnly();
+        }
     }
 }

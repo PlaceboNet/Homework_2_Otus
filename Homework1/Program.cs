@@ -4,6 +4,7 @@ using Homework1.Infrastructure.DataAccess;
 using Homework1.Infrastructure.DataAccess.Repositories;
 using Homework1.TelegramBot;
 using Homework1.TelegramBot.Scenario;
+using Homework1.Infrastructure;
 using Microsoft.VisualBasic;
 using System;
 using System.Linq;
@@ -95,6 +96,7 @@ namespace Homework1
             var toDoService = new ToDoService(toDoRepository, MaxTask, MaxLength);
             var listService = new ToDoListService(listRepository);
             var reportService = new ToDoReportService(toDoRepository);
+            var notificationService = new NotificationService(contextFactory);
 
             // Создаем сценарии
             var scenarios = new List<IScenario>
@@ -113,10 +115,29 @@ namespace Homework1
 
             // Инициализируем фоновые задачи
             var backgroundTaskRunner = new Homework1.BackgroundTasks.BackgroundTaskRunner();
+            
+            // Задача сброса сценария
             backgroundTaskRunner.AddTask(new Homework1.BackgroundTasks.ResetScenarioBackgroundTask(
                 TimeSpan.FromHours(1),
                 contextRepository,
                 new TelegramBotClient(botToken)));
+
+            // Задача отправки уведомлений (1 мин)
+            backgroundTaskRunner.AddTask(new Homework1.BackgroundTasks.NotificationBackgroundTask(
+                notificationService,
+                new TelegramBotClient(botToken)));
+
+            // Задача проверки дедлайнов (1 час)
+            backgroundTaskRunner.AddTask(new Homework1.BackgroundTasks.DeadlineBackgroundTask(
+                notificationService,
+                userRepository,
+                toDoRepository));
+
+            // Задача уведомлений на сегодня (1 день)
+            backgroundTaskRunner.AddTask(new Homework1.BackgroundTasks.TodayBackgroundTask(
+                notificationService,
+                userRepository,
+                toDoRepository));
 
             // Подписываемся на события
             updateHandler.OnHandleUpdateStarted += OnHandleUpdateStarted;

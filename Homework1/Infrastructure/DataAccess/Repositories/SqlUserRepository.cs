@@ -54,5 +54,14 @@ namespace Homework1.Infrastructure.DataAccess.Repositories
             var model = ModelMapper.MapToModel(user);
             await dbContext.InsertAsync(model, token: cancellationToken);
         }
+
+        public async Task<IReadOnlyList<ToDoUser>> GetUsers(CancellationToken ct)
+        {
+            using var dbContext = _factory.CreateDataContext();
+
+            var users = await dbContext.ToDoUsers.ToListAsync(ct);
+
+            return users.Select(ModelMapper.MapFromModel).ToList().AsReadOnly();
+        }
     }
 }

@@ -45,6 +45,8 @@ namespace Homework1.Infrastructure.DataAccess
             try { db.CreateTable<ToDoUserModel>(); } catch { }
             try { db.CreateTable<ToDoListModel>(); } catch { }
             try { db.CreateTable<ToDoItemModel>(); } catch { }
+            try { db.CreateTable<Homework1.Infrastructure.DataAccess.Models.NotificationModel>(); } catch { }
+            try { db.Execute("CREATE INDEX IF NOT EXISTS \"IX_Notification_UserId\" ON \"Notification\" (\"UserId\")"); } catch { }
         }
     }
 }

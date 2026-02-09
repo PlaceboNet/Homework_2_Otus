@@ -19,5 +19,6 @@ namespace Homework1.Infrastructure.DataAccess
         public ITable<ToDoUserModel> ToDoUsers => this.GetTable<ToDoUserModel>();
         public ITable<ToDoListModel> ToDoLists => this.GetTable<ToDoListModel>();
         public ITable<ToDoItemModel> ToDoItems => this.GetTable<ToDoItemModel>();
+        public ITable<Homework1.Infrastructure.DataAccess.Models.NotificationModel> Notifications => this.GetTable<Homework1.Infrastructure.DataAccess.Models.NotificationModel>();
     }
 }

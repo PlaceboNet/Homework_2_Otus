@@ -12,5 +12,6 @@ namespace Homework1.Core.DataAccess
         Task<ToDoUser?> GetUserAsync(Guid userId, CancellationToken cancellationToken = default);
         Task<ToDoUser?> GetUserByTelegramUserIdAsync(long telegramUserId, CancellationToken cancellationToken = default);
         Task AddAsync(ToDoUser user, CancellationToken cancellationToken = default);
+        Task<IReadOnlyList<ToDoUser>> GetUsers(CancellationToken ct);
     }
 }

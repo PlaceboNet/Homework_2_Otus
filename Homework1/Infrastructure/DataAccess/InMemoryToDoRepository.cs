@@ -205,6 +205,28 @@ namespace Homework1.Infrastructure.DataAccess
             }
         }
 
+        public async Task<IReadOnlyList<ToDoItem>> GetActiveWithDeadline(Guid userId, DateTime from, DateTime to, CancellationToken ct)
+        {
+            await _semaphore.WaitAsync(ct);
+            try
+            {
+                if (_userTasks.TryGetValue(userId, out var tasks))
+                {
+                    return tasks
+                        .Where(t => t.State == ToDoItemState.Active && 
+                                    t.Deadline >= from && 
+                                    t.Deadline < to)
+                        .ToList()
+                        .AsReadOnly();
+                }
+                return new List<ToDoItem>().AsReadOnly();
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
+        }
+
         // Дополнительный метод для очистки (не из интерфейса, но полезен)
         public async Task ClearAsync(CancellationToken cancellationToken = default)
         {

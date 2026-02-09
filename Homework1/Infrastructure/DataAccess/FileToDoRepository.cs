@@ -208,6 +208,17 @@ namespace Homework1.Infrastructure.DataAccess
             return tasks.Where(predicate).ToList();
         }
 
+        public async Task<IReadOnlyList<ToDoItem>> GetActiveWithDeadline(Guid userId, DateTime from, DateTime to, CancellationToken ct)
+        {
+            var allTasks = await GetAllByUserIdAsync(userId, ct);
+            return allTasks
+                .Where(t => t.State == ToDoItemState.Active && 
+                          t.Deadline >= from && 
+                          t.Deadline < to)
+                .ToList()
+                .AsReadOnly();
+        }
+
         private string GetUserFolderPath(Guid userId)
         {
             return Path.Combine(_basePath, userId.ToString());

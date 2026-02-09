@@ -27,5 +27,10 @@ namespace Homework1.Infrastructure.DataAccess
             _users.Add(user);
             return Task.CompletedTask;
         }
+
+        public Task<IReadOnlyList<ToDoUser>> GetUsers(CancellationToken ct)
+        {
+            return Task.FromResult<IReadOnlyList<ToDoUser>>(_users.ToList().AsReadOnly());
+        }
     }
 }

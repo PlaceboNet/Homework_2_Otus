@@ -58,6 +58,26 @@ namespace Homework1.Infrastructure.DataAccess
             await WriteUserToFileAsync(filePath, user, cancellationToken);
         }
 
+        public async Task<IReadOnlyList<ToDoUser>> GetUsers(CancellationToken ct)
+        {
+            if (!Directory.Exists(_basePath))
+                return new List<ToDoUser>();
+
+            var files = Directory.GetFiles(_basePath, "*.json");
+            var users = new List<ToDoUser>();
+
+            foreach (var file in files)
+            {
+                var user = await ReadUserFromFileAsync(file, ct);
+                if (user != null)
+                {
+                    users.Add(user);
+                }
+            }
+
+            return users.AsReadOnly();
+        }
+
         private string GetUserFilePath(Guid userId)
         {
             return Path.Combine(_basePath, $"{userId}.json");
