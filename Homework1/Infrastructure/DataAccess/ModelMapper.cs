@@ -1,94 +1,89 @@
-﻿using Homework1.Core.DataAccess.Models;
+﻿using Homework1.Infrastructure.DataAccess.Models;
 using Homework1.Core.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Homework1.Infrastructure.DataAccess
 {
     internal static class ModelMapper
     {
-        public static ToDoUser MapFromModel(ToDoUserModel model)
+        public static AbioticUser MapFromModel(AbioticUserModel model)
         {
             if (model == null) return null!;
 
-            return new ToDoUser
+            return new AbioticUser
             {
                 Id = model.Id,
                 TelegramUserId = model.TelegramUserId,
                 TelegramUserName = model.TelegramUserName,
-                Lists = model.Lists?.Select(MapFromModel).ToList(),
-                Tasks = model.Tasks?.Select(MapFromModel).ToList()
+                Role = (UserRole)model.Role,
+                Favorites = model.Favorites?.Select(MapFromModel).ToList()
             };
         }
 
-        public static ToDoUserModel MapToModel(ToDoUser entity)
+        public static AbioticUserModel MapToModel(AbioticUser entity)
         {
-            return new ToDoUserModel
+            return new AbioticUserModel
             {
                 Id = entity.Id,
                 TelegramUserId = entity.TelegramUserId,
-                TelegramUserName = entity.TelegramUserName
+                TelegramUserName = entity.TelegramUserName,
+                Role = (int)entity.Role
             };
         }
 
-        public static ToDoItem MapFromModel(ToDoItemModel model)
+        public static Article MapFromModel(ArticleModel model)
         {
             if (model == null) return null!;
 
-            return new ToDoItem
+            return new Article
             {
                 Id = model.Id,
-                UserId = model.UserId,
-                ListId = model.ListId,
-                Name = model.Name,
+                Title = model.Title,
+                Content = model.Content,
+                Category = (Category)model.Category,
                 CreatedAt = model.CreatedAt,
-                Deadline = model.Deadline,
-                State = (ToDoItemState)model.State,
-                User = model.User != null ? MapFromModel(model.User) : null,
-                List = model.List != null ? MapFromModel(model.List) : null
+                IsApproved = model.IsApproved,
+                SourceUrl = model.SourceUrl
             };
         }
 
-        public static ToDoItemModel MapToModel(ToDoItem entity)
+        public static ArticleModel MapToModel(Article entity)
         {
-            return new ToDoItemModel
+            return new ArticleModel
             {
                 Id = entity.Id,
-                UserId = entity.UserId,
-                ListId = entity.ListId,
-                Name = entity.Name,
+                Title = entity.Title,
+                Content = entity.Content,
+                Category = (int)entity.Category,
                 CreatedAt = entity.CreatedAt,
-                Deadline = entity.Deadline,
-                State = (int)entity.State
+                IsApproved = entity.IsApproved,
+                SourceUrl = entity.SourceUrl
             };
         }
 
-        public static ToDoList MapFromModel(ToDoListModel model)
+        public static Favorite MapFromModel(FavoriteModel model)
         {
             if (model == null) return null!;
 
-            return new ToDoList
+            return new Favorite
             {
                 Id = model.Id,
-                Name = model.Name,
                 UserId = model.UserId,
-                CreatedAt = model.CreatedAt,
-                User = model.User != null ? MapFromModel(model.User) : null,
-                Tasks = model.Tasks?.Select(MapFromModel).ToList()
+                ArticleId = model.ArticleId,
+                AddedAt = model.AddedAt
             };
         }
 
-        public static ToDoListModel MapToModel(ToDoList entity)
+        public static FavoriteModel MapToModel(Favorite entity)
         {
-            return new ToDoListModel
+            return new FavoriteModel
             {
                 Id = entity.Id,
-                Name = entity.Name,
                 UserId = entity.UserId,
-                CreatedAt = entity.CreatedAt
+                ArticleId = entity.ArticleId,
+                AddedAt = entity.AddedAt
             };
         }
     }

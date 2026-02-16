@@ -1,17 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Homework1.TelegramBot.Scenario
+﻿namespace Homework1.TelegramBot.Scenario
 {
     public enum ScenarioType
     {
         None,
-        AddTask,
-        AddList,
-        DeleteList,
-        DeleteTask
+        Search,
+        Favorites,
+        Admin,
+        AddArticle,
+        EditArticle,
+        ListArticles,
+        AddCategory
     }
 }

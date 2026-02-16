@@ -17,8 +17,7 @@ namespace Homework1.TelegramBot.Scenario
     }
 }
 
-// ./TelegramBot/Scenarios/InMemoryScenarioContextRepository.cs
-namespace TelegramBot.Scenarios
+namespace Homework1.TelegramBot.Scenario
 {
     public class InMemoryScenarioContextRepository : IScenarioContextRepository
     {

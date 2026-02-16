@@ -1,15 +1,12 @@
 ﻿using LinqToDB;
 using LinqToDB.Data;
-using Homework1.Core.DataAccess.Models;
+using Homework1.Infrastructure.DataAccess.Models;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Homework1.Infrastructure.DataAccess
 {
-    public class DataContextFactory : IDataContextFactory<ToDoDataContext>
+    public class DataContextFactory : IDataContextFactory<AbioticDataContext>
     {
         private readonly string _connectionString;
 
@@ -18,14 +15,14 @@ namespace Homework1.Infrastructure.DataAccess
             _connectionString = connectionString;
         }
 
-        public ToDoDataContext CreateDataContext()
+        public AbioticDataContext CreateDataContext()
         {
-            return new ToDoDataContext(_connectionString);
+            return new AbioticDataContext(_connectionString);
         }
 
         public void EnsureCreated()
         {
-            // 1. Создание самой БД (нужно подключиться к postgres)
+            // 1. Database Creation
             var builder = new Npgsql.NpgsqlConnectionStringBuilder(_connectionString);
             var targetDb = builder.Database;
             builder.Database = "postgres";
@@ -40,13 +37,16 @@ namespace Homework1.Infrastructure.DataAccess
                 }
             }
 
-            // 2. Создание таблиц
+            // 2. Table Creation
             using var db = CreateDataContext();
-            try { db.CreateTable<ToDoUserModel>(); } catch { }
-            try { db.CreateTable<ToDoListModel>(); } catch { }
-            try { db.CreateTable<ToDoItemModel>(); } catch { }
-            try { db.CreateTable<Homework1.Infrastructure.DataAccess.Models.NotificationModel>(); } catch { }
-            try { db.Execute("CREATE INDEX IF NOT EXISTS \"IX_Notification_UserId\" ON \"Notification\" (\"UserId\")"); } catch { }
+            try { db.CreateTable<AbioticUserModel>(); } catch { }
+            try { db.CreateTable<ArticleModel>(); } catch { }
+            try { db.CreateTable<FavoriteModel>(); } catch { }
+            try { db.CreateTable<NotificationModel>(); } catch { }
+            
+            // Indexes
+            try { db.Execute("CREATE INDEX IF NOT EXISTS \"IX_Favorite_UserId\" ON \"Favorite\" (\"UserId\")"); } catch { }
+            try { db.Execute("CREATE INDEX IF NOT EXISTS \"IX_Article_Title\" ON \"Article\" USING gin (to_tsvector('russian', \"Title\"))"); } catch { }
         }
     }
 }

@@ -1,17 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Homework1.Core.Entities;
-using Telegram.Bot;
 
 namespace Homework1.Core.Services
 {
     public interface IUserService
     {
-        Task<ToDoUser?> GetUserAsync(long telegramUserId, CancellationToken cancellationToken = default);
-        Task<ToDoUser?> GetUserByTelegramUserIdAsync(long telegramUserId, CancellationToken cancellationToken = default);
-        Task<ToDoUser> RegisterUserAsync(long telegramUserId, string telegramUserName, CancellationToken cancellationToken = default);
+        Task<AbioticUser?> GetUserByTelegramUserIdAsync(long telegramUserId, CancellationToken cancellationToken = default);
+        Task<AbioticUser> RegisterUserAsync(long telegramUserId, string telegramUserName, CancellationToken cancellationToken = default);
+        Task PromoteToAdminAsync(Guid userId, CancellationToken ct = default);
     }
 }

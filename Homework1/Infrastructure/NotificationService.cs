@@ -15,9 +15,9 @@ namespace Homework1.Infrastructure
 {
     public class NotificationService : INotificationService
     {
-        private readonly IDataContextFactory<ToDoDataContext> _factory;
+        private readonly IDataContextFactory<AbioticDataContext> _factory;
 
-        public NotificationService(IDataContextFactory<ToDoDataContext> factory)
+        public NotificationService(IDataContextFactory<AbioticDataContext> factory)
         {
             _factory = factory;
         }
@@ -31,7 +31,7 @@ namespace Homework1.Infrastructure
         {
             using var db = _factory.CreateDataContext();
 
-            var exists = await db.Notifications.AnyAsync(n => n.UserId == userId && n.Type == type, ct);
+            var exists = await db.Notifications.AnyAsync(n => n.UserId == userId && n.Type == type && !n.IsNotified, ct);
             if (exists)
                 return false;
 
@@ -67,7 +67,7 @@ namespace Homework1.Infrastructure
                 ScheduledAt = m.ScheduledAt,
                 IsNotified = m.IsNotified,
                 NotifiedAt = m.NotifiedAt,
-                User = ModelMapper.MapFromModel(m.User!) // Assuming we need user data to send notifications
+                User = ModelMapper.MapFromModel(m.User!)
             }).ToList().AsReadOnly();
         }
 

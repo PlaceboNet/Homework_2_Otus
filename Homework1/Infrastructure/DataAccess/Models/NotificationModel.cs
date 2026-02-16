@@ -1,4 +1,3 @@
-using Homework1.Core.DataAccess.Models;
 using LinqToDB.Mapping;
 using System;
 
@@ -29,7 +28,7 @@ namespace Homework1.Infrastructure.DataAccess.Models
         [Column("NotifiedAt")]
         public DateTime? NotifiedAt { get; set; }
 
-        [Association(ThisKey = nameof(UserId), OtherKey = nameof(ToDoUserModel.Id))]
-        public ToDoUserModel? User { get; set; }
+        [Association(ThisKey = nameof(UserId), OtherKey = nameof(AbioticUserModel.Id))]
+        public AbioticUserModel? User { get; set; }
     }
 }

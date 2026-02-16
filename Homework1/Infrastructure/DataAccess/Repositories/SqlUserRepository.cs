@@ -1,67 +1,62 @@
 ﻿using Homework1.Core.DataAccess;
 using Homework1.Core.Entities;
+using Homework1.Infrastructure.DataAccess.Models;
 using LinqToDB;
 using LinqToDB.Async;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Homework1.Infrastructure.DataAccess.Repositories
 {
     public class SqlUserRepository : IUserRepository
     {
-        private readonly IDataContextFactory<ToDoDataContext> _factory;
+        private readonly IDataContextFactory<AbioticDataContext> _factory;
 
-        public SqlUserRepository(IDataContextFactory<ToDoDataContext> factory)
+        public SqlUserRepository(IDataContextFactory<AbioticDataContext> factory)
         {
             _factory = factory;
         }
 
-        public async Task<ToDoUser?> GetUserAsync(Guid userId, CancellationToken cancellationToken = default)
+        public async Task<AbioticUser?> GetUserAsync(Guid userId, CancellationToken ct = default)
         {
-            using var dbContext = _factory.CreateDataContext();
-
-            var query = dbContext.ToDoUsers
-                .LoadWith(u => u.Lists!)
-                .LoadWith(u => u.Tasks!)
-                .Where(u => u.Id == userId);
-
-            var model = await query.FirstOrDefaultAsync(cancellationToken);
-
+            using var db = _factory.CreateDataContext();
+            var model = await db.Users
+                .LoadWith(u => u.Favorites!)
+                .FirstOrDefaultAsync(u => u.Id == userId, ct);
             return model != null ? ModelMapper.MapFromModel(model) : null;
         }
 
-        public async Task<ToDoUser?> GetUserByTelegramUserIdAsync(long telegramUserId, CancellationToken cancellationToken = default)
+        public async Task<AbioticUser?> GetUserByTelegramUserIdAsync(long telegramUserId, CancellationToken ct = default)
         {
-            using var dbContext = _factory.CreateDataContext();
-
-            var query = dbContext.ToDoUsers
-                .LoadWith(u => u.Lists!)
-                .LoadWith(u => u.Tasks!)
-                .Where(u => u.TelegramUserId == telegramUserId);
-
-            var model = await query.FirstOrDefaultAsync(cancellationToken);
-
+            using var db = _factory.CreateDataContext();
+            var model = await db.Users
+                .LoadWith(u => u.Favorites!)
+                .FirstOrDefaultAsync(u => u.TelegramUserId == telegramUserId, ct);
             return model != null ? ModelMapper.MapFromModel(model) : null;
         }
 
-        public async Task AddAsync(ToDoUser user, CancellationToken cancellationToken = default)
+        public async Task AddAsync(AbioticUser user, CancellationToken ct = default)
         {
-            using var dbContext = _factory.CreateDataContext();
-
+            using var db = _factory.CreateDataContext();
             var model = ModelMapper.MapToModel(user);
-            await dbContext.InsertAsync(model, token: cancellationToken);
+            await db.InsertAsync(model, token: ct);
         }
 
-        public async Task<IReadOnlyList<ToDoUser>> GetUsers(CancellationToken ct)
+        public async Task<IReadOnlyList<AbioticUser>> GetUsers(CancellationToken ct)
         {
-            using var dbContext = _factory.CreateDataContext();
+            using var db = _factory.CreateDataContext();
+            var models = await db.Users.ToListAsync(ct);
+            return models.Select(ModelMapper.MapFromModel).ToList().AsReadOnly();
+        }
 
-            var users = await dbContext.ToDoUsers.ToListAsync(ct);
-
-            return users.Select(ModelMapper.MapFromModel).ToList().AsReadOnly();
+        public async Task UpdateAsync(AbioticUser user, CancellationToken ct = default)
+        {
+            using var db = _factory.CreateDataContext();
+            var model = ModelMapper.MapToModel(user);
+            await db.UpdateAsync(model, token: ct);
         }
     }
 }

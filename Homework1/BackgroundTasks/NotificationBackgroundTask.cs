@@ -1,10 +1,8 @@
 using Homework1.Core.Services;
-using Homework1.Core.Entities;
+using Telegram.Bot;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Telegram.Bot;
-using Telegram.Bot.Types.Enums;
 
 namespace Homework1.BackgroundTasks
 {
@@ -14,7 +12,7 @@ namespace Homework1.BackgroundTasks
         private readonly ITelegramBotClient _botClient;
 
         public NotificationBackgroundTask(INotificationService notificationService, ITelegramBotClient botClient)
-            : base(TimeSpan.FromMinutes(1), nameof(NotificationBackgroundTask))
+            : base(TimeSpan.FromMinutes(1), "NotificationTask")
         {
             _notificationService = notificationService;
             _botClient = botClient;
@@ -29,16 +27,16 @@ namespace Homework1.BackgroundTasks
                 try
                 {
                     await _botClient.SendMessage(
-                        chatId: notification.User.TelegramUserId,
-                        text: notification.Text,
-                        parseMode: ParseMode.MarkdownV2,
+                        notification.User.TelegramUserId,
+                        $"📢 *УВЕДОМЛЕНИЕ:*\n\n{notification.Text}",
+                        parseMode: Telegram.Bot.Types.Enums.ParseMode.Markdown,
                         cancellationToken: ct);
 
                     await _notificationService.MarkNotified(notification.Id, ct);
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error sending notification {notification.Id} to {notification.User.TelegramUserId}: {ex.Message}");
+                    Console.WriteLine($"Ошибка при отправке уведомления пользователю {notification.User.TelegramUserId}: {ex.Message}");
                 }
             }
         }
